@@ -22,19 +22,22 @@
       <button class="summary-card mathieu" type="button" data-summary-person="Mathieu">
         <span class="summary-name">Mathieu</span>
         <span class="summary-count" id="summaryMathieu">0</span>
-        <span class="summary-text">dans les 5 prochains jours</span>
+        <span class="summary-text" id="summaryMathieuText">0 dans les 5 prochains jours</span>
+        <span class="summary-overdue" id="summaryMathieuOverdue">0 en retard</span>
       </button>
 
       <button class="summary-card sarah" type="button" data-summary-person="Sarah">
         <span class="summary-name">Sarah</span>
         <span class="summary-count" id="summarySarah">0</span>
-        <span class="summary-text">dans les 5 prochains jours</span>
+        <span class="summary-text" id="summarySarahText">0 dans les 5 prochains jours</span>
+        <span class="summary-overdue" id="summarySarahOverdue">0 en retard</span>
       </button>
 
       <button class="summary-card all neutral" type="button" data-summary-person="all">
         <span class="summary-name">Tous</span>
         <span class="summary-count" id="summaryAll">0</span>
-        <span class="summary-text">dans les 5 prochains jours</span>
+        <span class="summary-text" id="summaryAllText">0 dans les 5 prochains jours</span>
+        <span class="summary-overdue" id="summaryAllOverdue">0 en retard</span>
       </button>
     </section>
 
@@ -44,7 +47,23 @@
       <button class="person-tab sarah-tab" data-person="Sarah">Sarah</button>
     </nav>
 
-    <section class="panel form-panel">
+    <section class="panel panel-compact task-panel-toolbar">
+      <div class="task-panel-toolbar-row">
+        <div>
+          <h2 class="toolbar-title">Nouvelle tâche</h2>
+          <p class="toolbar-subtitle">Ajout rapide selon ton appareil</p>
+        </div>
+
+        <div class="toolbar-actions">
+          <button id="showTaskPanelBtn" class="secondary-btn" type="button">Afficher maintenant</button>
+          <button id="hideTaskPanelBtn" class="secondary-btn" type="button">Cacher maintenant</button>
+          <button id="hideTaskPanelDefaultBtn" class="secondary-btn" type="button">Cacher par défaut</button>
+          <button id="showTaskPanelDefaultBtn" class="secondary-btn" type="button">Afficher par défaut</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="taskFormPanel" class="panel form-panel">
       <div class="section-title-row">
         <h2>Nouvelle tâche</h2>
       </div>
@@ -74,6 +93,22 @@
           <div class="field">
             <label for="dueDate">Date prévue</label>
             <input id="dueDate" name="dueDate" type="date" required />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label class="checkbox-row">
+              <input id="isUniqueTask" type="checkbox" />
+              <span>Tâche unique (pas de récurrence)</span>
+            </label>
+          </div>
+
+          <div class="field">
+            <label class="checkbox-row checkbox-row-alt">
+              <input id="alternateAssignee" type="checkbox" />
+              <span>Alterner l’assignation</span>
+            </label>
           </div>
         </div>
 
@@ -186,6 +221,22 @@
           <div class="field">
             <label for="editDueDate">Prochaine occurrence</label>
             <input id="editDueDate" type="date" required />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label class="checkbox-row">
+              <input id="editIsUniqueTask" type="checkbox" />
+              <span>Tâche unique (pas de récurrence)</span>
+            </label>
+          </div>
+
+          <div class="field">
+            <label class="checkbox-row checkbox-row-alt">
+              <input id="editAlternateAssignee" type="checkbox" />
+              <span>Alterner l’assignation</span>
+            </label>
           </div>
         </div>
 
