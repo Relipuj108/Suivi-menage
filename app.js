@@ -1,657 +1,728 @@
-/* global supabase, SUPABASE_URL, SUPABASE_ANON_KEY */
+:root {
+  --bg: #f6f8fc;
+  --bg-2: #eef3fb;
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-strong: rgba(255, 255, 255, 0.88);
+  --line: rgba(160, 178, 214, 0.34);
+  --text: #1f2a3d;
+  --muted: #6c7a95;
+  --shadow: 0 18px 50px rgba(75, 102, 150, 0.14);
 
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  --mathieu-bg: rgba(255, 186, 120, 0.28);
+  --mathieu-border: rgba(245, 154, 66, 0.4);
+  --mathieu-strong: #e98b2a;
 
-const state = {
-  tasks: [],
-  currentPerson: "all",
-  currentView: "day",
-  selectedDate: "",
-  pendingCompleteTaskId: null,
-};
+  --sarah-bg: rgba(160, 216, 255, 0.3);
+  --sarah-border: rgba(91, 176, 237, 0.36);
+  --sarah-strong: #4a9de4;
 
-const els = {
-  taskForm: document.getElementById("taskForm"),
-  title: document.getElementById("title"),
-  assignee: document.getElementById("assignee"),
-  dueDate: document.getElementById("dueDate"),
-  repeatDays: document.getElementById("repeatDays"),
-  notes: document.getElementById("notes"),
-  refreshBtn: document.getElementById("refreshBtn"),
-  personTabs: [...document.querySelectorAll(".person-tab")],
-  viewBtns: [...document.querySelectorAll(".view-btn")],
-  selectedDate: document.getElementById("selectedDate"),
-  statusFilter: document.getElementById("statusFilter"),
-  agendaTitle: document.getElementById("agendaTitle"),
-  agendaSubtitle: document.getElementById("agendaSubtitle"),
-  countBadge: document.getElementById("countBadge"),
-  statusMessage: document.getElementById("statusMessage"),
-  agendaContainer: document.getElementById("agendaContainer"),
+  --neutral-bg: rgba(240, 244, 251, 0.72);
+  --neutral-border: rgba(182, 194, 219, 0.32);
 
-  repeatQuickButtons: [...document.querySelectorAll("#repeatQuickButtons .repeat-mini-btn")],
-
-  editModal: document.getElementById("editModal"),
-  closeModalBtn: document.getElementById("closeModalBtn"),
-  editForm: document.getElementById("editForm"),
-  editId: document.getElementById("editId"),
-  editTitle: document.getElementById("editTitle"),
-  editAssignee: document.getElementById("editAssignee"),
-  editDueDate: document.getElementById("editDueDate"),
-  editRepeatDays: document.getElementById("editRepeatDays"),
-  editNotes: document.getElementById("editNotes"),
-  inactiveFromModalBtn: document.getElementById("inactiveFromModalBtn"),
-  editRepeatQuickButtons: [...document.querySelectorAll("#editRepeatQuickButtons .repeat-mini-btn")],
-
-  completeModal: document.getElementById("completeModal"),
-  closeCompleteModalBtn: document.getElementById("closeCompleteModalBtn"),
-  completeModalText: document.getElementById("completeModalText"),
-  completeFromDueBtn: document.getElementById("completeFromDueBtn"),
-  completeFromTodayBtn: document.getElementById("completeFromTodayBtn"),
-  manualNextDate: document.getElementById("manualNextDate"),
-  completeManualBtn: document.getElementById("completeManualBtn"),
-};
-
-function todayString() {
-  const now = new Date();
-  return formatDateInput(now);
+  --success: #1fb46e;
+  --success-soft: rgba(31, 180, 110, 0.12);
+  --danger: #e16363;
+  --danger-soft: rgba(225, 99, 99, 0.12);
+  --secondary: #8b98b4;
+  --secondary-soft: rgba(139, 152, 180, 0.13);
 }
 
-function formatDateInput(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
-function addDays(dateString, days) {
-  const date = new Date(`${dateString}T00:00:00`);
-  date.setDate(date.getDate() + Number(days));
-  return formatDateInput(date);
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 176, 96, 0.18), transparent 28%),
+    radial-gradient(circle at 100% 0%, rgba(126, 198, 255, 0.18), transparent 28%),
+    radial-gradient(circle at 50% 100%, rgba(170, 190, 255, 0.1), transparent 35%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
 }
 
-function formatDateLabel(dateString) {
-  const date = new Date(`${dateString}T00:00:00`);
-  return new Intl.DateTimeFormat("fr-BE", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-  }).format(date);
+body {
+  min-height: 100vh;
 }
 
-function formatDateShort(dateString) {
-  if (!dateString) return "—";
-  const date = new Date(`${dateString}T00:00:00`);
-  return new Intl.DateTimeFormat("fr-BE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
+button,
+input,
+select {
+  font: inherit;
 }
 
-function startOfWeek(dateString) {
-  const date = new Date(`${dateString}T00:00:00`);
-  const day = date.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  date.setDate(date.getDate() + diff);
-  return formatDateInput(date);
+.app-shell {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 14px 14px 34px;
 }
 
-function endOfWeek(dateString) {
-  return addDays(startOfWeek(dateString), 6);
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+.eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5f8ed6;
 }
 
-function isOverdue(task) {
-  return task.status === "pending" && task.due_date < todayString();
+h1 {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
 }
 
-function setMessage(message = "", type = "") {
-  els.statusMessage.textContent = message;
-  els.statusMessage.className = "status-message";
-  if (type) els.statusMessage.classList.add(type);
+.subtitle {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
-function getPersonClass(assignee) {
-  return assignee === "Sarah" ? "sarah" : "mathieu";
+.icon-btn {
+  border: 1px solid var(--line);
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(14px);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  font-size: 20px;
 }
 
-function applyActiveStates() {
-  els.personTabs.forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.person === state.currentPerson);
-  });
-
-  els.viewBtns.forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.view === state.currentView);
-  });
+.summary-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.9fr;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
-function syncRepeatMiniButtons(buttons, value) {
-  const strValue = String(value);
-  buttons.forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.repeat === strValue);
-  });
+.summary-card {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 12px;
+  background: rgba(255,255,255,0.58);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
 }
 
-function updateAgendaHeader(filteredCount) {
-  const personLabel =
-    state.currentPerson === "all" ? "Tout le monde" : state.currentPerson;
+.summary-card.mathieu {
+  background: rgba(255, 243, 232, 0.92);
+  border-color: var(--mathieu-border);
+}
 
-  if (state.currentView === "day") {
-    els.agendaTitle.textContent = `Jour · ${personLabel}`;
-    els.agendaSubtitle.textContent = formatDateLabel(state.selectedDate);
-  } else if (state.currentView === "week") {
-    els.agendaTitle.textContent = `Semaine · ${personLabel}`;
-    els.agendaSubtitle.textContent =
-      `${formatDateShort(startOfWeek(state.selectedDate))} → ${formatDateShort(endOfWeek(state.selectedDate))}`;
-  } else {
-    const nextWeekStart = addDays(startOfWeek(state.selectedDate), 7);
-    const nextWeekEnd = addDays(nextWeekStart, 6);
-    els.agendaTitle.textContent = `Semaine prochaine · ${personLabel}`;
-    els.agendaSubtitle.textContent =
-      `${formatDateShort(nextWeekStart)} → ${formatDateShort(nextWeekEnd)}`;
+.summary-card.sarah {
+  background: rgba(236, 247, 255, 0.92);
+  border-color: var(--sarah-border);
+}
+
+.summary-card.neutral {
+  background: rgba(246, 249, 253, 0.92);
+  border-color: var(--neutral-border);
+}
+
+.summary-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.summary-count {
+  display: block;
+  margin-top: 6px;
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.summary-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.person-switch {
+  display: grid;
+  grid-template-columns: 0.8fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.person-tab {
+  border: 1px solid var(--line);
+  min-height: 52px;
+  border-radius: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  background: rgba(255,255,255,0.62);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.person-tab.active[data-person="all"] {
+  background: var(--neutral-bg);
+  border-color: var(--neutral-border);
+}
+
+.person-tab.active[data-person="Mathieu"] {
+  background: rgba(255, 239, 225, 0.96);
+  border-color: var(--mathieu-border);
+  color: #a65e12;
+}
+
+.person-tab.active[data-person="Sarah"] {
+  background: rgba(234, 246, 255, 0.96);
+  border-color: var(--sarah-border);
+  color: #2f79b8;
+}
+
+.panel {
+  background: var(--panel);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,0.45);
+  box-shadow: var(--shadow);
+  border-radius: 26px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.section-title-row h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.section-subtitle {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.task-form,
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.grid-2,
+.filters-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #34435f;
+}
+
+input,
+select {
+  min-height: 50px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.78);
+  color: var(--text);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid rgba(103, 164, 255, 0.12);
+  border-color: rgba(103, 164, 255, 0.4);
+}
+
+.assignee-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.assignee-btn {
+  min-height: 48px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  font-weight: 800;
+  cursor: pointer;
+  background: rgba(255,255,255,0.68);
+}
+
+.assignee-btn.mathieu {
+  color: #a35f17;
+  background: rgba(255, 242, 228, 0.95);
+  border-color: rgba(239, 170, 106, 0.28);
+}
+
+.assignee-btn.sarah {
+  color: #2d78b7;
+  background: rgba(234, 246, 255, 0.95);
+  border-color: rgba(112, 190, 240, 0.28);
+}
+
+.assignee-btn.active.mathieu {
+  background: linear-gradient(180deg, rgba(255, 202, 146, 0.95), rgba(250, 172, 91, 0.95));
+  color: #6f3900;
+  border-color: rgba(233, 139, 42, 0.5);
+}
+
+.assignee-btn.active.sarah {
+  background: linear-gradient(180deg, rgba(184, 228, 255, 0.98), rgba(119, 197, 248, 0.95));
+  color: #0c4f8b;
+  border-color: rgba(74, 157, 228, 0.5);
+}
+
+.primary-btn,
+.danger-btn,
+.secondary-btn,
+.view-btn,
+.option-btn {
+  min-height: 48px;
+  border: none;
+  border-radius: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary-btn {
+  background: linear-gradient(180deg, #83d5ff 0%, #6e8dff 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 30px rgba(110, 141, 255, 0.24);
+}
+
+.secondary-btn {
+  background: rgba(255,255,255,0.72);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.full-btn {
+  width: 100%;
+}
+
+.view-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.view-btn {
+  background: rgba(255,255,255,0.62);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.view-btn.active {
+  background: linear-gradient(180deg, rgba(206, 233, 255, 0.95), rgba(193, 205, 255, 0.9));
+  border-color: rgba(121, 160, 238, 0.3);
+}
+
+.count-badge {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(235, 243, 255, 0.95);
+  border: 1px solid rgba(166, 188, 232, 0.32);
+  color: #45608f;
+  font-weight: 800;
+}
+
+.status-message {
+  min-height: 20px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.status-message.error {
+  color: #c65353;
+}
+
+.status-message.success {
+  color: #178c57;
+}
+
+.repeat-picker {
+  display: grid;
+  grid-template-columns: 1fr 90px;
+  gap: 10px;
+  align-items: start;
+}
+
+.repeat-quick {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.repeat-mini-btn {
+  min-height: 40px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.62);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.repeat-mini-btn.active {
+  background: linear-gradient(180deg, rgba(255, 223, 194, 0.95), rgba(255, 197, 141, 0.95));
+  border-color: rgba(233, 139, 42, 0.32);
+  color: #8b4f14;
+}
+
+.agenda-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.day-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.day-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(14px);
+  border-radius: 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(202, 214, 236, 0.44);
+}
+
+.day-header.overdue-header {
+  background: rgba(255, 240, 240, 0.95);
+  border-color: rgba(225, 99, 99, 0.24);
+}
+
+.day-header-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.day-header-subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.empty-state {
+  padding: 24px 16px;
+  border-radius: 20px;
+  text-align: center;
+  color: var(--muted);
+  background: rgba(255,255,255,0.54);
+  border: 1px dashed rgba(170, 186, 216, 0.44);
+}
+
+.task-card {
+  border-radius: 24px;
+  padding: 14px;
+  border: 1px solid transparent;
+  box-shadow: 0 10px 26px rgba(94, 117, 154, 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.task-card.mathieu {
+  background: rgba(255, 245, 235, 0.95);
+  border-color: var(--mathieu-border);
+}
+
+.task-card.sarah {
+  background: rgba(238, 248, 255, 0.95);
+  border-color: var(--sarah-border);
+}
+
+.task-card.inactive {
+  opacity: 0.62;
+  filter: grayscale(0.15);
+}
+
+.task-card.done {
+  opacity: 0.76;
+}
+
+.task-card.overdue {
+  box-shadow: 0 0 0 2px rgba(225, 99, 99, 0.14), 0 10px 26px rgba(94, 117, 154, 0.12);
+}
+
+.task-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.check-action {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  margin-top: 2px;
+  background: rgba(255,255,255,0.8);
+  box-shadow: inset 0 0 0 2px rgba(113, 145, 194, 0.18);
+}
+
+.check-action::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 999px;
+  background: transparent;
+  transition: 0.2s ease;
+}
+
+.check-action:hover::before {
+  background: rgba(31, 180, 110, 0.24);
+}
+
+.task-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.18;
+  word-break: break-word;
+}
+
+.task-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.task-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.8);
+  border: 1px solid rgba(182, 194, 219, 0.26);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.task-meta {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #556582;
+}
+
+.task-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.edit-btn,
+.delete-btn,
+.reactivate-btn {
+  min-height: 40px;
+  border: none;
+  border-radius: 14px;
+  padding: 0 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.edit-btn {
+  background: rgba(255,255,255,0.88);
+  color: var(--text);
+}
+
+.delete-btn {
+  background: var(--danger-soft);
+  color: #b84f4f;
+}
+
+.reactivate-btn {
+  background: var(--success-soft);
+  color: #178c57;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(78, 95, 124, 0.18);
+  backdrop-filter: blur(6px);
+}
+
+.modal-card {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  background: var(--panel-strong);
+  border-radius: 28px;
+  padding: 16px;
+  box-shadow: 0 24px 70px rgba(82, 104, 150, 0.18);
+  border: 1px solid rgba(255,255,255,0.54);
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.futuristic-card {
+  box-shadow:
+    0 0 0 1px rgba(175, 200, 245, 0.12),
+    0 20px 60px rgba(82, 104, 150, 0.18),
+    inset 0 1px 0 rgba(255,255,255,0.34);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.close-btn {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.72);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.complete-text {
+  color: #40506e;
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+
+.complete-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.option-btn {
+  background: rgba(255,255,255,0.72);
+  color: var(--text);
+  border: 1px solid var(--line);
+  padding: 12px;
+}
+
+.manual-next-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 760px) {
+  .modal-card {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 12px 12px 28px;
   }
 
-  els.countBadge.textContent = String(filteredCount);
-}
-
-function getRangeDates() {
-  if (state.currentView === "day") {
-    return [state.selectedDate];
+  h1 {
+    font-size: 28px;
   }
 
-  let start = startOfWeek(state.selectedDate);
-
-  if (state.currentView === "nextWeek") {
-    start = addDays(start, 7);
+  .grid-2,
+  .filters-grid,
+  .complete-options,
+  .modal-actions,
+  .summary-strip {
+    grid-template-columns: 1fr;
   }
 
-  return Array.from({ length: 7 }, (_, i) => addDays(start, i));
-}
-
-function getFilteredTasks() {
-  const statusFilter = els.statusFilter.value;
-  const rangeDates = getRangeDates();
-  const dateSet = new Set(rangeDates);
-
-  return state.tasks
-    .filter((task) => {
-      if (statusFilter === "inactive") {
-        if (task.status !== "inactive") return false;
-      } else {
-        if (!dateSet.has(task.due_date)) return false;
-
-        if (statusFilter !== "all" && task.status !== statusFilter) {
-          return false;
-        }
-
-        if (statusFilter === "all" && task.status === "inactive") {
-          return false;
-        }
-      }
-
-      if (state.currentPerson !== "all" && task.assignee !== state.currentPerson) {
-        return false;
-      }
-
-      return true;
-    })
-    .sort((a, b) => {
-      if (a.due_date !== b.due_date) return a.due_date.localeCompare(b.due_date);
-      if (a.status !== b.status) {
-        const order = { pending: 0, done: 1, inactive: 2 };
-        return order[a.status] - order[b.status];
-      }
-      return (a.title || "").localeCompare(b.title || "", "fr");
-    });
-}
-
-function renderAgenda() {
-  const filtered = getFilteredTasks();
-  updateAgendaHeader(filtered.length);
-
-  if (!filtered.length) {
-    els.agendaContainer.innerHTML = `<div class="empty-state">Aucune tâche sur cette période.</div>`;
-    return;
+  .repeat-picker {
+    grid-template-columns: 1fr;
   }
 
-  if (els.statusFilter.value === "inactive") {
-    els.agendaContainer.innerHTML = `
-      <div class="day-group">
-        <div class="day-header">
-          <p class="day-header-title">Tâches inactives</p>
-          <p class="day-header-subtitle">${filtered.length} tâche(s)</p>
-        </div>
-
-        ${filtered.map(renderTaskCard).join("")}
-      </div>
-    `;
-    return;
+  .repeat-quick {
+    grid-template-columns: repeat(5, 1fr);
   }
 
-  const rangeDates = getRangeDates();
-
-  const html = rangeDates
-    .map((date) => {
-      const dayTasks = filtered.filter((task) => task.due_date === date);
-      if (!dayTasks.length) return "";
-
-      return `
-        <div class="day-group">
-          <div class="day-header">
-            <p class="day-header-title">${escapeHtml(formatDateLabel(date))}</p>
-            <p class="day-header-subtitle">${dayTasks.length} tâche(s)</p>
-          </div>
-
-          ${dayTasks.map(renderTaskCard).join("")}
-        </div>
-      `;
-    })
-    .join("");
-
-  els.agendaContainer.innerHTML = html || `<div class="empty-state">Aucune tâche sur cette période.</div>`;
-}
-
-function renderTaskCard(task) {
-  const personClass = getPersonClass(task.assignee);
-  const doneClass = task.status === "done" ? "done" : "";
-  const inactiveClass = task.status === "inactive" ? "inactive" : "";
-  const overdueClass = isOverdue(task) ? "overdue" : "";
-  const repeatText =
-    Number(task.repeat_days) > 0
-      ? `Tous les ${task.repeat_days} jour(s)`
-      : "Sans répétition";
-
-  return `
-    <article class="task-card ${personClass} ${doneClass} ${inactiveClass} ${overdueClass}">
-      <div class="task-top">
-        ${
-          task.status !== "inactive"
-            ? `<button class="check-action" data-action="done" data-id="${task.id}" aria-label="Marquer comme fait"></button>`
-            : ``
-        }
-
-        <div class="task-main">
-          <h3 class="task-title">${escapeHtml(task.title)}</h3>
-
-          <div class="task-badges">
-            <span class="task-badge">${escapeHtml(task.assignee)}</span>
-            <span class="task-badge">${escapeHtml(repeatText)}</span>
-            <span class="task-badge">${
-              task.status === "pending"
-                ? "À faire"
-                : task.status === "done"
-                ? "Terminée"
-                : "Inactive"
-            }</span>
-          </div>
-
-          <div class="task-meta">
-            Prochaine occurrence : ${escapeHtml(formatDateShort(task.due_date))}<br>
-            Dernière validation : ${task.last_completed_at ? escapeHtml(formatDateShort(task.last_completed_at)) : "Jamais"}
-            ${task.notes ? `<br>Note : ${escapeHtml(task.notes)}` : ""}
-          </div>
-
-          <div class="task-actions">
-            <button class="edit-btn" data-action="edit" data-id="${task.id}">Modifier</button>
-            ${
-              task.status === "inactive"
-                ? `<button class="reactivate-btn" data-action="reactivate" data-id="${task.id}">Réactiver</button>`
-                : `<button class="delete-btn" data-action="inactive" data-id="${task.id}">Inactive</button>`
-            }
-          </div>
-        </div>
-      </div>
-    </article>
-  `;
-}
-
-async function fetchTasks() {
-  setMessage("Chargement...");
-  const { data, error } = await db
-    .from("tasks")
-    .select("*")
-    .order("due_date", { ascending: true })
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    console.error(error);
-    setMessage(`Erreur de chargement : ${error.message}`, "error");
-    return;
+  .topbar {
+    align-items: stretch;
   }
-
-  state.tasks = data || [];
-  renderAgenda();
-  setMessage("Synchronisé.", "success");
 }
-
-async function addTask(event) {
-  event.preventDefault();
-
-  const payload = {
-    title: els.title.value.trim(),
-    assignee: els.assignee.value,
-    due_date: els.dueDate.value,
-    repeat_days: Number(els.repeatDays.value || 0),
-    status: "pending",
-    notes: els.notes.value.trim() || null,
-  };
-
-  if (!payload.title || !payload.due_date) {
-    setMessage("Titre et date obligatoires.", "error");
-    return;
-  }
-
-  setMessage("Ajout en cours...");
-
-  const { error } = await db.from("tasks").insert(payload);
-
-  if (error) {
-    console.error(error);
-    setMessage(`Erreur lors de l'ajout : ${error.message}`, "error");
-    return;
-  }
-
-  els.taskForm.reset();
-  els.assignee.value = "Mathieu";
-  els.dueDate.value = state.selectedDate;
-  els.repeatDays.value = "0";
-  syncRepeatMiniButtons(els.repeatQuickButtons, "0");
-  setMessage("Tâche ajoutée.", "success");
-}
-
-function openEditModal(id) {
-  const task = state.tasks.find((t) => t.id === id);
-  if (!task) return;
-
-  els.editId.value = task.id;
-  els.editTitle.value = task.title || "";
-  els.editAssignee.value = task.assignee || "Mathieu";
-  els.editDueDate.value = task.due_date;
-  els.editRepeatDays.value = String(task.repeat_days ?? 0);
-  els.editNotes.value = task.notes || "";
-
-  syncRepeatMiniButtons(els.editRepeatQuickButtons, els.editRepeatDays.value);
-  els.editModal.classList.remove("hidden");
-}
-
-function closeEditModal() {
-  els.editModal.classList.add("hidden");
-}
-
-async function saveEdit(event) {
-  event.preventDefault();
-
-  const id = els.editId.value;
-  const payload = {
-    title: els.editTitle.value.trim(),
-    assignee: els.editAssignee.value,
-    due_date: els.editDueDate.value,
-    repeat_days: Number(els.editRepeatDays.value || 0),
-    notes: els.editNotes.value.trim() || null,
-  };
-
-  if (!payload.title || !payload.due_date) {
-    setMessage("Titre et date obligatoires.", "error");
-    return;
-  }
-
-  setMessage("Enregistrement en cours...");
-
-  const { error } = await db.from("tasks").update(payload).eq("id", id);
-
-  if (error) {
-    console.error(error);
-    setMessage(`Erreur lors de l'enregistrement : ${error.message}`, "error");
-    return;
-  }
-
-  closeEditModal();
-  setMessage("Tâche modifiée.", "success");
-}
-
-async function setTaskInactive(id) {
-  const ok = window.confirm("Mettre cette tâche en inactif ?");
-  if (!ok) return;
-
-  setMessage("Mise à jour en cours...");
-
-  const { error } = await db
-    .from("tasks")
-    .update({ status: "inactive" })
-    .eq("id", id);
-
-  if (error) {
-    console.error(error);
-    setMessage(`Erreur lors du passage en inactif : ${error.message}`, "error");
-    return;
-  }
-
-  closeEditModal();
-  setMessage("Tâche mise en inactif.", "success");
-}
-
-async function reactivateTask(id) {
-  setMessage("Réactivation en cours...");
-
-  const { error } = await db
-    .from("tasks")
-    .update({ status: "pending" })
-    .eq("id", id);
-
-  if (error) {
-    console.error(error);
-    setMessage(`Erreur lors de la réactivation : ${error.message}`, "error");
-    return;
-  }
-
-  setMessage("Tâche réactivée.", "success");
-}
-
-function openCompleteModal(task) {
-  state.pendingCompleteTaskId = task.id;
-
-  els.completeModalText.textContent =
-    `Cette tâche était prévue pour le ${formatDateShort(task.due_date)} et possède une répétition de ${task.repeat_days} jour(s). Choisis comment calculer la prochaine occurrence.`;
-
-  els.manualNextDate.value = addDays(task.due_date, task.repeat_days);
-  els.completeModal.classList.remove("hidden");
-}
-
-function closeCompleteModal() {
-  state.pendingCompleteTaskId = null;
-  els.completeModal.classList.add("hidden");
-}
-
-async function applyCompletion(task, nextDate = null) {
-  const completedDate = todayString();
-
-  let payload;
-  if (nextDate) {
-    payload = {
-      last_completed_at: completedDate,
-      due_date: nextDate,
-      status: "pending",
-    };
-  } else {
-    payload = {
-      last_completed_at: completedDate,
-      status: "done",
-    };
-  }
-
-  setMessage("Mise à jour en cours...");
-
-  const { error } = await db.from("tasks").update(payload).eq("id", task.id);
-
-  if (error) {
-    console.error(error);
-    setMessage(`Erreur lors de la validation : ${error.message}`, "error");
-    return;
-  }
-
-  if (nextDate && state.currentView === "day") {
-    state.selectedDate = nextDate;
-    els.selectedDate.value = nextDate;
-  }
-
-  await fetchTasks();
-
-  setMessage(
-    nextDate
-      ? `Tâche validée. Prochaine occurrence : ${formatDateShort(nextDate)}`
-      : "Tâche terminée.",
-    "success"
-  );
-}
-
-async function completeTask(id) {
-  const task = state.tasks.find((t) => t.id === id);
-  if (!task) return;
-  if (task.status === "inactive") return;
-
-  const repeatDays = Number(task.repeat_days || 0);
-
-  if (repeatDays <= 0) {
-    await applyCompletion(task, null);
-    return;
-  }
-
-  if (task.due_date === todayString()) {
-    await applyCompletion(task, addDays(task.due_date, repeatDays));
-    return;
-  }
-
-  openCompleteModal(task);
-}
-
-async function handleCompleteFromBase(baseType) {
-  const task = state.tasks.find((t) => t.id === state.pendingCompleteTaskId);
-  if (!task) return;
-
-  const baseDate = baseType === "today" ? todayString() : task.due_date;
-  const nextDate = addDays(baseDate, Number(task.repeat_days || 0));
-
-  closeCompleteModal();
-  await applyCompletion(task, nextDate);
-}
-
-async function handleCompleteManual() {
-  const task = state.tasks.find((t) => t.id === state.pendingCompleteTaskId);
-  if (!task) return;
-
-  const nextDate = els.manualNextDate.value;
-  if (!nextDate) {
-    setMessage("Choisis une date manuelle.", "error");
-    return;
-  }
-
-  closeCompleteModal();
-  await applyCompletion(task, nextDate);
-}
-
-function handleAgendaClick(event) {
-  const btn = event.target.closest("[data-action]");
-  if (!btn) return;
-
-  const { action, id } = btn.dataset;
-
-  if (action === "done") completeTask(id);
-  if (action === "edit") openEditModal(id);
-  if (action === "inactive") setTaskInactive(id);
-  if (action === "reactivate") reactivateTask(id);
-}
-
-function initRealtime() {
-  db.channel("tasks-realtime-v22")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "tasks" },
-      () => fetchTasks()
-    )
-    .subscribe();
-}
-
-function initRepeatButtons(buttons, input) {
-  buttons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      input.value = btn.dataset.repeat;
-      syncRepeatMiniButtons(buttons, input.value);
-    });
-  });
-
-  input.addEventListener("input", () => {
-    syncRepeatMiniButtons(buttons, input.value);
-  });
-}
-
-function initEvents() {
-  els.taskForm.addEventListener("submit", addTask);
-  els.refreshBtn.addEventListener("click", fetchTasks);
-  els.statusFilter.addEventListener("change", renderAgenda);
-  els.selectedDate.addEventListener("change", () => {
-    state.selectedDate = els.selectedDate.value;
-    renderAgenda();
-  });
-  els.agendaContainer.addEventListener("click", handleAgendaClick);
-
-  els.personTabs.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.currentPerson = btn.dataset.person;
-      applyActiveStates();
-      renderAgenda();
-    });
-  });
-
-  els.viewBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.currentView = btn.dataset.view;
-      applyActiveStates();
-      renderAgenda();
-    });
-  });
-
-  els.editForm.addEventListener("submit", saveEdit);
-  els.closeModalBtn.addEventListener("click", closeEditModal);
-  els.inactiveFromModalBtn.addEventListener("click", () => setTaskInactive(els.editId.value));
-
-  els.editModal.addEventListener("click", (event) => {
-    if (event.target.dataset.closeModal === "true") {
-      closeEditModal();
-    }
-  });
-
-  els.closeCompleteModalBtn.addEventListener("click", closeCompleteModal);
-  els.completeFromDueBtn.addEventListener("click", () => handleCompleteFromBase("due"));
-  els.completeFromTodayBtn.addEventListener("click", () => handleCompleteFromBase("today"));
-  els.completeManualBtn.addEventListener("click", handleCompleteManual);
-
-  initRepeatButtons(els.repeatQuickButtons, els.repeatDays);
-  initRepeatButtons(els.editRepeatQuickButtons, els.editRepeatDays);
-}
-
-function initDefaults() {
-  state.selectedDate = todayString();
-  els.selectedDate.value = state.selectedDate;
-  els.dueDate.value = state.selectedDate;
-  els.assignee.value = "Mathieu";
-  els.statusFilter.value = "pending";
-  syncRepeatMiniButtons(els.repeatQuickButtons, els.repeatDays.value);
-  applyActiveStates();
-}
-
-async function init() {
-  initDefaults();
-  initEvents();
-  initRealtime();
-  await fetchTasks();
-}
-
-init();
