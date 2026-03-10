@@ -1,2 +1,2 @@
-const SUPABASE_URL = "https://TON-PROJET.supabase.co";
-const SUPABASE_ANON_KEY = "TA_CLE_PUBLIQUE_ANON";
+const SUPABASE_URL = "https://gumoazqbhtaydpcnresa.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bW9henFiaHRheWRwY25yZXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNDkxODksImV4cCI6MjA4ODcyNTE4OX0.Oktz19NTlZtJ3Ez2TDjV2JuJm1-cxrOs9sEVuViSv8Y";
