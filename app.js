@@ -4,9 +4,10 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const state = {
   tasks: [],
-  currentPerson: "Mathieu",
+  currentPerson: "all",
   currentView: "day",
   selectedDate: "",
+  pendingCompleteTaskId: null,
 };
 
 const els = {
@@ -27,6 +28,8 @@ const els = {
   statusMessage: document.getElementById("statusMessage"),
   agendaContainer: document.getElementById("agendaContainer"),
 
+  repeatQuickButtons: [...document.querySelectorAll("#repeatQuickButtons .repeat-mini-btn")],
+
   editModal: document.getElementById("editModal"),
   closeModalBtn: document.getElementById("closeModalBtn"),
   editForm: document.getElementById("editForm"),
@@ -36,21 +39,21 @@ const els = {
   editDueDate: document.getElementById("editDueDate"),
   editRepeatDays: document.getElementById("editRepeatDays"),
   editNotes: document.getElementById("editNotes"),
-  deleteFromModalBtn: document.getElementById("deleteFromModalBtn"),
+  inactiveFromModalBtn: document.getElementById("inactiveFromModalBtn"),
+  editRepeatQuickButtons: [...document.querySelectorAll("#editRepeatQuickButtons .repeat-mini-btn")],
+
+  completeModal: document.getElementById("completeModal"),
+  closeCompleteModalBtn: document.getElementById("closeCompleteModalBtn"),
+  completeModalText: document.getElementById("completeModalText"),
+  completeFromDueBtn: document.getElementById("completeFromDueBtn"),
+  completeFromTodayBtn: document.getElementById("completeFromTodayBtn"),
+  manualNextDate: document.getElementById("manualNextDate"),
+  completeManualBtn: document.getElementById("completeManualBtn"),
 };
 
 function todayString() {
   const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function addDays(dateString, days) {
-  const date = new Date(`${dateString}T00:00:00`);
-  date.setDate(date.getDate() + Number(days));
-  return formatDateInput(date);
+  return formatDateInput(now);
 }
 
 function formatDateInput(date) {
@@ -58,6 +61,12 @@ function formatDateInput(date) {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+function addDays(dateString, days) {
+  const date = new Date(`${dateString}T00:00:00`);
+  date.setDate(date.getDate() + Number(days));
+  return formatDateInput(date);
 }
 
 function formatDateLabel(dateString) {
@@ -70,6 +79,7 @@ function formatDateLabel(dateString) {
 }
 
 function formatDateShort(dateString) {
+  if (!dateString) return "—";
   const date = new Date(`${dateString}T00:00:00`);
   return new Intl.DateTimeFormat("fr-BE", {
     day: "2-digit",
@@ -110,8 +120,7 @@ function setMessage(message = "", type = "") {
 }
 
 function getPersonClass(assignee) {
-  if (assignee === "Sarah") return "sarah";
-  return "mathieu";
+  return assignee === "Sarah" ? "sarah" : "mathieu";
 }
 
 function applyActiveStates() {
@@ -121,6 +130,13 @@ function applyActiveStates() {
 
   els.viewBtns.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.view === state.currentView);
+  });
+}
+
+function syncRepeatMiniButtons(buttons, value) {
+  const strValue = String(value);
+  buttons.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.repeat === strValue);
   });
 }
 
@@ -167,13 +183,21 @@ function getFilteredTasks() {
 
   return state.tasks
     .filter((task) => {
-      if (!dateSet.has(task.due_date)) return false;
+      if (statusFilter === "inactive") {
+        if (task.status !== "inactive") return false;
+      } else {
+        if (!dateSet.has(task.due_date)) return false;
 
-      if (state.currentPerson !== "all" && task.assignee !== state.currentPerson) {
-        return false;
+        if (statusFilter !== "all" && task.status !== statusFilter) {
+          return false;
+        }
+
+        if (statusFilter === "all" && task.status === "inactive") {
+          return false;
+        }
       }
 
-      if (statusFilter !== "all" && task.status !== statusFilter) {
+      if (state.currentPerson !== "all" && task.assignee !== state.currentPerson) {
         return false;
       }
 
@@ -181,7 +205,10 @@ function getFilteredTasks() {
     })
     .sort((a, b) => {
       if (a.due_date !== b.due_date) return a.due_date.localeCompare(b.due_date);
-      if (a.status !== b.status) return a.status === "pending" ? -1 : 1;
+      if (a.status !== b.status) {
+        const order = { pending: 0, done: 1, inactive: 2 };
+        return order[a.status] - order[b.status];
+      }
       return (a.title || "").localeCompare(b.title || "", "fr");
     });
 }
@@ -190,75 +217,100 @@ function renderAgenda() {
   const filtered = getFilteredTasks();
   updateAgendaHeader(filtered.length);
 
-  const rangeDates = getRangeDates();
-
   if (!filtered.length) {
     els.agendaContainer.innerHTML = `<div class="empty-state">Aucune tâche sur cette période.</div>`;
     return;
   }
 
+  if (els.statusFilter.value === "inactive") {
+    els.agendaContainer.innerHTML = `
+      <div class="day-group">
+        <div class="day-header">
+          <p class="day-header-title">Tâches inactives</p>
+          <p class="day-header-subtitle">${filtered.length} tâche(s)</p>
+        </div>
+
+        ${filtered.map(renderTaskCard).join("")}
+      </div>
+    `;
+    return;
+  }
+
+  const rangeDates = getRangeDates();
+
   const html = rangeDates
     .map((date) => {
       const dayTasks = filtered.filter((task) => task.due_date === date);
-
       if (!dayTasks.length) return "";
 
       return `
         <div class="day-group">
           <div class="day-header">
             <p class="day-header-title">${escapeHtml(formatDateLabel(date))}</p>
-            <p class="day-header-subtitle">${escapeHtml(String(dayTasks.length))} tâche(s)</p>
+            <p class="day-header-subtitle">${dayTasks.length} tâche(s)</p>
           </div>
 
-          ${dayTasks
-            .map((task) => {
-              const personClass = getPersonClass(task.assignee);
-              const doneClass = task.status === "done" ? "done" : "";
-              const overdueClass = isOverdue(task) ? "overdue" : "";
-
-              const repeatText =
-                Number(task.repeat_days) > 0
-                  ? `Tous les ${task.repeat_days} jour(s)`
-                  : "Sans répétition";
-
-              return `
-                <article class="task-card ${personClass} ${doneClass} ${overdueClass}">
-                  <div class="task-top">
-                    <button class="check-action" data-action="done" data-id="${task.id}" aria-label="Marquer comme fait"></button>
-
-                    <div class="task-main">
-                      <div class="task-title-row">
-                        <h3 class="task-title">${escapeHtml(task.title)}</h3>
-                      </div>
-
-                      <div class="task-badges">
-                        <span class="task-badge">${escapeHtml(task.assignee)}</span>
-                        <span class="task-badge">${escapeHtml(repeatText)}</span>
-                        <span class="task-badge">${task.status === "pending" ? "À faire" : "Terminée"}</span>
-                      </div>
-
-                      <div class="task-meta">
-                        Prochaine occurrence : ${escapeHtml(formatDateShort(task.due_date))}<br>
-                        Dernière validation : ${task.last_completed_at ? escapeHtml(formatDateShort(task.last_completed_at)) : "Jamais"}
-                        ${task.notes ? `<br>Note : ${escapeHtml(task.notes)}` : ""}
-                      </div>
-
-                      <div class="task-actions">
-                        <button class="edit-btn" data-action="edit" data-id="${task.id}">Modifier</button>
-                        <button class="delete-btn" data-action="delete" data-id="${task.id}">Supprimer</button>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              `;
-            })
-            .join("")}
+          ${dayTasks.map(renderTaskCard).join("")}
         </div>
       `;
     })
     .join("");
 
   els.agendaContainer.innerHTML = html || `<div class="empty-state">Aucune tâche sur cette période.</div>`;
+}
+
+function renderTaskCard(task) {
+  const personClass = getPersonClass(task.assignee);
+  const doneClass = task.status === "done" ? "done" : "";
+  const inactiveClass = task.status === "inactive" ? "inactive" : "";
+  const overdueClass = isOverdue(task) ? "overdue" : "";
+  const repeatText =
+    Number(task.repeat_days) > 0
+      ? `Tous les ${task.repeat_days} jour(s)`
+      : "Sans répétition";
+
+  return `
+    <article class="task-card ${personClass} ${doneClass} ${inactiveClass} ${overdueClass}">
+      <div class="task-top">
+        ${
+          task.status !== "inactive"
+            ? `<button class="check-action" data-action="done" data-id="${task.id}" aria-label="Marquer comme fait"></button>`
+            : ``
+        }
+
+        <div class="task-main">
+          <h3 class="task-title">${escapeHtml(task.title)}</h3>
+
+          <div class="task-badges">
+            <span class="task-badge">${escapeHtml(task.assignee)}</span>
+            <span class="task-badge">${escapeHtml(repeatText)}</span>
+            <span class="task-badge">${
+              task.status === "pending"
+                ? "À faire"
+                : task.status === "done"
+                ? "Terminée"
+                : "Inactive"
+            }</span>
+          </div>
+
+          <div class="task-meta">
+            Prochaine occurrence : ${escapeHtml(formatDateShort(task.due_date))}<br>
+            Dernière validation : ${task.last_completed_at ? escapeHtml(formatDateShort(task.last_completed_at)) : "Jamais"}
+            ${task.notes ? `<br>Note : ${escapeHtml(task.notes)}` : ""}
+          </div>
+
+          <div class="task-actions">
+            <button class="edit-btn" data-action="edit" data-id="${task.id}">Modifier</button>
+            ${
+              task.status === "inactive"
+                ? `<button class="reactivate-btn" data-action="reactivate" data-id="${task.id}">Réactiver</button>`
+                : `<button class="delete-btn" data-action="inactive" data-id="${task.id}">Inactive</button>`
+            }
+          </div>
+        </div>
+      </div>
+    </article>
+  `;
 }
 
 async function fetchTasks() {
@@ -308,74 +360,11 @@ async function addTask(event) {
   }
 
   els.taskForm.reset();
-  els.assignee.value = state.currentPerson === "Sarah" ? "Sarah" : "Mathieu";
+  els.assignee.value = "Mathieu";
   els.dueDate.value = state.selectedDate;
   els.repeatDays.value = "0";
+  syncRepeatMiniButtons(els.repeatQuickButtons, "0");
   setMessage("Tâche ajoutée.", "success");
-}
-
-async function completeTask(id) {
-  const task = state.tasks.find((t) => t.id === id);
-  if (!task) return;
-
-  const completedDate = todayString();
-  const repeatDays = Number(task.repeat_days || 0);
-  let nextDate = null;
-  let updatePayload = {};
-
-  if (repeatDays > 0) {
-    let baseDate = task.due_date;
-
-    if (task.due_date !== completedDate) {
-      const useTodayAsBase = window.confirm(
-        `Cette tâche était prévue pour le ${formatDateShort(task.due_date)}.\n\n` +
-        `Clique sur OK pour calculer la prochaine occurrence à partir d'aujourd'hui (${formatDateShort(completedDate)}).\n` +
-        `Clique sur Annuler pour la calculer à partir de la date prévue.`
-      );
-
-      baseDate = useTodayAsBase ? completedDate : task.due_date;
-    }
-
-    nextDate = addDays(baseDate, repeatDays);
-
-    updatePayload = {
-      last_completed_at: completedDate,
-      due_date: nextDate,
-      status: "pending",
-    };
-  } else {
-    updatePayload = {
-      last_completed_at: completedDate,
-      status: "done",
-    };
-  }
-
-  setMessage("Mise à jour en cours...");
-
-  const { error } = await db
-    .from("tasks")
-    .update(updatePayload)
-    .eq("id", id);
-
-  if (error) {
-    console.error(error);
-    setMessage(`Erreur lors de la validation : ${error.message}`, "error");
-    return;
-  }
-
-  if (nextDate && state.currentView === "day") {
-    state.selectedDate = nextDate;
-    els.selectedDate.value = nextDate;
-  }
-
-  await fetchTasks();
-
-  setMessage(
-    nextDate
-      ? `Tâche validée. Prochaine occurrence : ${formatDateShort(nextDate)}`
-      : "Tâche terminée.",
-    "success"
-  );
 }
 
 function openEditModal(id) {
@@ -389,6 +378,7 @@ function openEditModal(id) {
   els.editRepeatDays.value = String(task.repeat_days ?? 0);
   els.editNotes.value = task.notes || "";
 
+  syncRepeatMiniButtons(els.editRepeatQuickButtons, els.editRepeatDays.value);
   els.editModal.classList.remove("hidden");
 }
 
@@ -427,22 +417,144 @@ async function saveEdit(event) {
   setMessage("Tâche modifiée.", "success");
 }
 
-async function deleteTask(id) {
-  const ok = window.confirm("Supprimer cette tâche ?");
+async function setTaskInactive(id) {
+  const ok = window.confirm("Mettre cette tâche en inactif ?");
   if (!ok) return;
 
-  setMessage("Suppression en cours...");
+  setMessage("Mise à jour en cours...");
 
-  const { error } = await db.from("tasks").delete().eq("id", id);
+  const { error } = await db
+    .from("tasks")
+    .update({ status: "inactive" })
+    .eq("id", id);
 
   if (error) {
     console.error(error);
-    setMessage(`Erreur lors de la suppression : ${error.message}`, "error");
+    setMessage(`Erreur lors du passage en inactif : ${error.message}`, "error");
     return;
   }
 
   closeEditModal();
-  setMessage("Tâche supprimée.", "success");
+  setMessage("Tâche mise en inactif.", "success");
+}
+
+async function reactivateTask(id) {
+  setMessage("Réactivation en cours...");
+
+  const { error } = await db
+    .from("tasks")
+    .update({ status: "pending" })
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    setMessage(`Erreur lors de la réactivation : ${error.message}`, "error");
+    return;
+  }
+
+  setMessage("Tâche réactivée.", "success");
+}
+
+function openCompleteModal(task) {
+  state.pendingCompleteTaskId = task.id;
+
+  els.completeModalText.textContent =
+    `Cette tâche était prévue pour le ${formatDateShort(task.due_date)} et possède une répétition de ${task.repeat_days} jour(s). Choisis comment calculer la prochaine occurrence.`;
+
+  els.manualNextDate.value = addDays(task.due_date, task.repeat_days);
+  els.completeModal.classList.remove("hidden");
+}
+
+function closeCompleteModal() {
+  state.pendingCompleteTaskId = null;
+  els.completeModal.classList.add("hidden");
+}
+
+async function applyCompletion(task, nextDate = null) {
+  const completedDate = todayString();
+
+  let payload;
+  if (nextDate) {
+    payload = {
+      last_completed_at: completedDate,
+      due_date: nextDate,
+      status: "pending",
+    };
+  } else {
+    payload = {
+      last_completed_at: completedDate,
+      status: "done",
+    };
+  }
+
+  setMessage("Mise à jour en cours...");
+
+  const { error } = await db.from("tasks").update(payload).eq("id", task.id);
+
+  if (error) {
+    console.error(error);
+    setMessage(`Erreur lors de la validation : ${error.message}`, "error");
+    return;
+  }
+
+  if (nextDate && state.currentView === "day") {
+    state.selectedDate = nextDate;
+    els.selectedDate.value = nextDate;
+  }
+
+  await fetchTasks();
+
+  setMessage(
+    nextDate
+      ? `Tâche validée. Prochaine occurrence : ${formatDateShort(nextDate)}`
+      : "Tâche terminée.",
+    "success"
+  );
+}
+
+async function completeTask(id) {
+  const task = state.tasks.find((t) => t.id === id);
+  if (!task) return;
+  if (task.status === "inactive") return;
+
+  const repeatDays = Number(task.repeat_days || 0);
+
+  if (repeatDays <= 0) {
+    await applyCompletion(task, null);
+    return;
+  }
+
+  if (task.due_date === todayString()) {
+    await applyCompletion(task, addDays(task.due_date, repeatDays));
+    return;
+  }
+
+  openCompleteModal(task);
+}
+
+async function handleCompleteFromBase(baseType) {
+  const task = state.tasks.find((t) => t.id === state.pendingCompleteTaskId);
+  if (!task) return;
+
+  const baseDate = baseType === "today" ? todayString() : task.due_date;
+  const nextDate = addDays(baseDate, Number(task.repeat_days || 0));
+
+  closeCompleteModal();
+  await applyCompletion(task, nextDate);
+}
+
+async function handleCompleteManual() {
+  const task = state.tasks.find((t) => t.id === state.pendingCompleteTaskId);
+  if (!task) return;
+
+  const nextDate = els.manualNextDate.value;
+  if (!nextDate) {
+    setMessage("Choisis une date manuelle.", "error");
+    return;
+  }
+
+  closeCompleteModal();
+  await applyCompletion(task, nextDate);
 }
 
 function handleAgendaClick(event) {
@@ -453,17 +565,31 @@ function handleAgendaClick(event) {
 
   if (action === "done") completeTask(id);
   if (action === "edit") openEditModal(id);
-  if (action === "delete") deleteTask(id);
+  if (action === "inactive") setTaskInactive(id);
+  if (action === "reactivate") reactivateTask(id);
 }
 
 function initRealtime() {
-  db.channel("tasks-realtime-v2")
+  db.channel("tasks-realtime-v22")
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "tasks" },
       () => fetchTasks()
     )
     .subscribe();
+}
+
+function initRepeatButtons(buttons, input) {
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      input.value = btn.dataset.repeat;
+      syncRepeatMiniButtons(buttons, input.value);
+    });
+  });
+
+  input.addEventListener("input", () => {
+    syncRepeatMiniButtons(buttons, input.value);
+  });
 }
 
 function initEvents() {
@@ -479,7 +605,6 @@ function initEvents() {
   els.personTabs.forEach((btn) => {
     btn.addEventListener("click", () => {
       state.currentPerson = btn.dataset.person;
-      els.assignee.value = state.currentPerson === "Sarah" ? "Sarah" : "Mathieu";
       applyActiveStates();
       renderAgenda();
     });
@@ -495,13 +620,21 @@ function initEvents() {
 
   els.editForm.addEventListener("submit", saveEdit);
   els.closeModalBtn.addEventListener("click", closeEditModal);
-  els.deleteFromModalBtn.addEventListener("click", () => deleteTask(els.editId.value));
+  els.inactiveFromModalBtn.addEventListener("click", () => setTaskInactive(els.editId.value));
 
   els.editModal.addEventListener("click", (event) => {
     if (event.target.dataset.closeModal === "true") {
       closeEditModal();
     }
   });
+
+  els.closeCompleteModalBtn.addEventListener("click", closeCompleteModal);
+  els.completeFromDueBtn.addEventListener("click", () => handleCompleteFromBase("due"));
+  els.completeFromTodayBtn.addEventListener("click", () => handleCompleteFromBase("today"));
+  els.completeManualBtn.addEventListener("click", handleCompleteManual);
+
+  initRepeatButtons(els.repeatQuickButtons, els.repeatDays);
+  initRepeatButtons(els.editRepeatQuickButtons, els.editRepeatDays);
 }
 
 function initDefaults() {
@@ -509,6 +642,8 @@ function initDefaults() {
   els.selectedDate.value = state.selectedDate;
   els.dueDate.value = state.selectedDate;
   els.assignee.value = "Mathieu";
+  els.statusFilter.value = "pending";
+  syncRepeatMiniButtons(els.repeatQuickButtons, els.repeatDays.value);
   applyActiveStates();
 }
 
