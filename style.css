@@ -867,3 +867,46 @@ select:focus {
     grid-template-columns: 1fr;
   }
 }
+
+.task-panel-toolbar-mini {
+  margin-bottom: 10px;
+}
+
+.task-panel-toolbar-mini-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 4px 2px;
+}
+
+.task-panel-toolbar-mini-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.task-panel-toolbar-mini-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mini-btn {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+
+.mini-btn:hover {
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
+}
