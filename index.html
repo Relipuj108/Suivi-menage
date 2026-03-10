@@ -2,140 +2,161 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Planning ménage</title>
-
   <link rel="stylesheet" href="style.css" />
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="app-shell">
-    <header class="app-header">
+    <header class="topbar">
       <div>
-        <p class="eyebrow">Organisation familiale</p>
+        <p class="eyebrow">Organisation maison</p>
         <h1>Planning ménage</h1>
-        <p class="subtitle">
-          Tâches partagées, récurrentes, synchronisées en direct.
-        </p>
+        <p class="subtitle">Vue mobile, tâches récurrentes, synchronisation en direct.</p>
       </div>
-      <button id="refreshBtn" class="btn btn-secondary" type="button">
-        Rafraîchir
-      </button>
+      <button id="refreshBtn" class="icon-btn" type="button" aria-label="Rafraîchir">↻</button>
     </header>
 
-    <main class="layout">
-      <section class="panel">
-        <h2>Ajouter une tâche</h2>
+    <nav class="person-switch">
+      <button class="person-tab active" data-person="Mathieu">Mathieu</button>
+      <button class="person-tab" data-person="Sarah">Sarah</button>
+      <button class="person-tab neutral" data-person="all">Tous</button>
+    </nav>
 
-        <form id="taskForm" class="task-form">
+    <section class="panel form-panel">
+      <div class="section-title-row">
+        <h2>Nouvelle tâche</h2>
+      </div>
+
+      <form id="taskForm" class="task-form">
+        <div class="field">
+          <label for="title">Tâche</label>
+          <input id="title" name="title" type="text" maxlength="120" placeholder="Ex : Passer l’aspirateur en haut" required />
+        </div>
+
+        <div class="grid-2">
           <div class="field">
-            <label for="title">Tâche</label>
-            <input
-              id="title"
-              name="title"
-              type="text"
-              maxlength="120"
-              placeholder="Ex : Passer l’aspirateur au salon"
-              required
-            />
-          </div>
-
-          <div class="grid-2">
-            <div class="field">
-              <label for="assignee">Assigné à</label>
-              <input
-                id="assignee"
-                name="assignee"
-                type="text"
-                maxlength="60"
-                placeholder="Ex : Julie"
-              />
-            </div>
-
-            <div class="field">
-              <label for="dueDate">Date prévue</label>
-              <input id="dueDate" name="dueDate" type="date" required />
-            </div>
-          </div>
-
-          <div class="grid-2">
-            <div class="field">
-              <label for="repeatDays">Répétition (jours)</label>
-              <input
-                id="repeatDays"
-                name="repeatDays"
-                type="number"
-                min="0"
-                step="1"
-                value="0"
-                placeholder="0 = pas de répétition"
-              />
-            </div>
-
-            <div class="field">
-              <label for="notes">Note</label>
-              <input
-                id="notes"
-                name="notes"
-                type="text"
-                maxlength="200"
-                placeholder="Optionnel"
-              />
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button class="btn" type="submit">Ajouter la tâche</button>
-          </div>
-        </form>
-      </section>
-
-      <section class="panel">
-        <h2>Filtres</h2>
-
-        <div class="filters">
-          <div class="field">
-            <label for="filterStatus">Statut</label>
-            <select id="filterStatus">
-              <option value="pending">À faire</option>
-              <option value="all">Toutes</option>
-              <option value="done">Terminées</option>
+            <label for="assignee">Assigné à</label>
+            <select id="assignee" name="assignee" required>
+              <option value="Mathieu">Mathieu</option>
+              <option value="Sarah">Sarah</option>
             </select>
           </div>
 
           <div class="field">
-            <label for="filterAssignee">Personne</label>
-            <select id="filterAssignee">
-              <option value="">Tout le monde</option>
+            <label for="dueDate">Date prévue</label>
+            <input id="dueDate" name="dueDate" type="date" required />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="repeatDays">Répétition (jours)</label>
+            <input id="repeatDays" name="repeatDays" type="number" min="0" step="1" value="0" />
+          </div>
+
+          <div class="field">
+            <label for="notes">Note</label>
+            <input id="notes" name="notes" type="text" maxlength="200" placeholder="Optionnel" />
+          </div>
+        </div>
+
+        <button class="primary-btn full-btn" type="submit">Ajouter la tâche</button>
+      </form>
+    </section>
+
+    <section class="panel controls-panel">
+      <div class="section-title-row">
+        <h2>Vue</h2>
+      </div>
+
+      <div class="view-toggle">
+        <button class="view-btn active" data-view="day">Jour</button>
+        <button class="view-btn" data-view="week">Semaine</button>
+        <button class="view-btn" data-view="nextWeek">Semaine prochaine</button>
+      </div>
+
+      <div class="filters-grid">
+        <div class="field">
+          <label for="selectedDate">Jour sélectionné</label>
+          <input id="selectedDate" type="date" />
+        </div>
+
+        <div class="field">
+          <label for="statusFilter">Statut</label>
+          <select id="statusFilter">
+            <option value="pending">À faire</option>
+            <option value="all">Toutes</option>
+            <option value="done">Terminées</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel agenda-panel">
+      <div class="section-title-row">
+        <div>
+          <h2 id="agendaTitle">Agenda</h2>
+          <p id="agendaSubtitle" class="section-subtitle"></p>
+        </div>
+        <span id="countBadge" class="count-badge">0</span>
+      </div>
+
+      <div id="statusMessage" class="status-message"></div>
+      <div id="agendaContainer" class="agenda-container"></div>
+    </section>
+  </div>
+
+  <div id="editModal" class="modal hidden">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Modifier la tâche</h3>
+        <button id="closeModalBtn" class="close-btn" type="button">✕</button>
+      </div>
+
+      <form id="editForm" class="edit-form">
+        <input id="editId" type="hidden" />
+
+        <div class="field">
+          <label for="editTitle">Titre</label>
+          <input id="editTitle" type="text" maxlength="120" required />
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="editAssignee">Assigné à</label>
+            <select id="editAssignee" required>
+              <option value="Mathieu">Mathieu</option>
+              <option value="Sarah">Sarah</option>
             </select>
           </div>
 
           <div class="field">
-            <label for="searchInput">Recherche</label>
-            <input
-              id="searchInput"
-              type="text"
-              placeholder="Chercher une tâche"
-            />
+            <label for="editDueDate">Prochaine occurrence</label>
+            <input id="editDueDate" type="date" required />
           </div>
         </div>
-      </section>
 
-      <section class="panel">
-        <div class="section-head">
-          <h2>Liste des tâches</h2>
-          <span id="countBadge" class="count-badge">0</span>
+        <div class="grid-2">
+          <div class="field">
+            <label for="editRepeatDays">Répétition (jours)</label>
+            <input id="editRepeatDays" type="number" min="0" step="1" required />
+          </div>
+
+          <div class="field">
+            <label for="editNotes">Note</label>
+            <input id="editNotes" type="text" maxlength="200" />
+          </div>
         </div>
 
-        <div id="statusMessage" class="status-message"></div>
-
-        <div id="taskList" class="task-list"></div>
-      </section>
-    </main>
+        <div class="modal-actions">
+          <button class="primary-btn" type="submit">Enregistrer</button>
+          <button id="deleteFromModalBtn" class="danger-btn" type="button">Supprimer</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script src="config.js"></script>
