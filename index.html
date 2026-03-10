@@ -13,15 +13,35 @@
       <div>
         <p class="eyebrow">Organisation maison</p>
         <h1>Planning ménage</h1>
-        <p class="subtitle">Limelette </p>
+        <p class="subtitle">Vue agenda, tâches récurrentes, interface mobile moderne.</p>
       </div>
       <button id="refreshBtn" class="icon-btn" type="button" aria-label="Rafraîchir">↻</button>
     </header>
 
+    <section class="summary-strip">
+      <button class="summary-card mathieu" type="button" data-summary-person="Mathieu">
+        <span class="summary-name">Mathieu</span>
+        <span class="summary-count" id="summaryMathieu">0</span>
+        <span class="summary-text">dans les 5 prochains jours</span>
+      </button>
+
+      <button class="summary-card sarah" type="button" data-summary-person="Sarah">
+        <span class="summary-name">Sarah</span>
+        <span class="summary-count" id="summarySarah">0</span>
+        <span class="summary-text">dans les 5 prochains jours</span>
+      </button>
+
+      <button class="summary-card all neutral" type="button" data-summary-person="all">
+        <span class="summary-name">Tous</span>
+        <span class="summary-count" id="summaryAll">0</span>
+        <span class="summary-text">dans les 5 prochains jours</span>
+      </button>
+    </section>
+
     <nav class="person-switch">
       <button class="person-tab neutral active" data-person="all">Tous</button>
-      <button class="person-tab" data-person="Mathieu">Mathieu</button>
-      <button class="person-tab" data-person="Sarah">Sarah</button>
+      <button class="person-tab mathieu-tab" data-person="Mathieu">Mathieu</button>
+      <button class="person-tab sarah-tab" data-person="Sarah">Sarah</button>
     </nav>
 
     <section class="panel form-panel">
@@ -37,11 +57,12 @@
 
         <div class="grid-2">
           <div class="field">
-            <label for="assignee">Assigné à</label>
-            <select id="assignee" name="assignee" required>
-              <option value="Mathieu">Mathieu</option>
-              <option value="Sarah">Sarah</option>
-            </select>
+            <label>Assigné à</label>
+            <div class="assignee-toggle" id="assigneeToggle">
+              <button type="button" class="assignee-btn mathieu active" data-assignee="Mathieu">Mathieu</button>
+              <button type="button" class="assignee-btn sarah" data-assignee="Sarah">Sarah</button>
+            </div>
+            <input id="assignee" name="assignee" type="hidden" value="Mathieu" />
           </div>
 
           <div class="field">
@@ -83,6 +104,7 @@
     <section class="panel controls-panel">
       <div class="section-title-row">
         <h2>Vue</h2>
+        <button id="goTodayBtn" class="secondary-btn" type="button">Aujourd’hui</button>
       </div>
 
       <div class="view-toggle">
@@ -141,11 +163,12 @@
 
         <div class="grid-2">
           <div class="field">
-            <label for="editAssignee">Assigné à</label>
-            <select id="editAssignee" required>
-              <option value="Mathieu">Mathieu</option>
-              <option value="Sarah">Sarah</option>
-            </select>
+            <label>Assigné à</label>
+            <div class="assignee-toggle" id="editAssigneeToggle">
+              <button type="button" class="assignee-btn mathieu" data-assignee="Mathieu">Mathieu</button>
+              <button type="button" class="assignee-btn sarah" data-assignee="Sarah">Sarah</button>
+            </div>
+            <input id="editAssignee" type="hidden" value="Mathieu" />
           </div>
 
           <div class="field">
@@ -182,7 +205,7 @@
 
         <div class="modal-actions">
           <button class="primary-btn" type="submit">Enregistrer</button>
-          <button id="inactiveFromModalBtn" class="secondary-btn" type="button">Mettre inactive</button>
+          <button id="inactiveFromModalBtn" class="secondary-btn" type="button">Inactiver</button>
         </div>
       </form>
     </div>
