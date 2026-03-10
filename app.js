@@ -8,17 +8,27 @@ const state = {
   currentView: "day",
   selectedDate: "",
   pendingCompleteTaskId: null,
+  deviceId: "",
+  hideTaskPanelByDefault: false,
 };
 
 const els = {
+  taskFormPanel: document.getElementById("taskFormPanel"),
   taskForm: document.getElementById("taskForm"),
   title: document.getElementById("title"),
   assignee: document.getElementById("assignee"),
   dueDate: document.getElementById("dueDate"),
   repeatDays: document.getElementById("repeatDays"),
   notes: document.getElementById("notes"),
+  isUniqueTask: document.getElementById("isUniqueTask"),
+  alternateAssignee: document.getElementById("alternateAssignee"),
+
   refreshBtn: document.getElementById("refreshBtn"),
   goTodayBtn: document.getElementById("goTodayBtn"),
+  showTaskPanelBtn: document.getElementById("showTaskPanelBtn"),
+  hideTaskPanelBtn: document.getElementById("hideTaskPanelBtn"),
+  hideTaskPanelDefaultBtn: document.getElementById("hideTaskPanelDefaultBtn"),
+  showTaskPanelDefaultBtn: document.getElementById("showTaskPanelDefaultBtn"),
 
   personTabs: [...document.querySelectorAll(".person-tab")],
   viewBtns: [...document.querySelectorAll(".view-btn")],
@@ -35,9 +45,14 @@ const els = {
   summaryMathieu: document.getElementById("summaryMathieu"),
   summarySarah: document.getElementById("summarySarah"),
   summaryAll: document.getElementById("summaryAll"),
+  summaryMathieuText: document.getElementById("summaryMathieuText"),
+  summarySarahText: document.getElementById("summarySarahText"),
+  summaryAllText: document.getElementById("summaryAllText"),
+  summaryMathieuOverdue: document.getElementById("summaryMathieuOverdue"),
+  summarySarahOverdue: document.getElementById("summarySarahOverdue"),
+  summaryAllOverdue: document.getElementById("summaryAllOverdue"),
 
   repeatQuickButtons: [...document.querySelectorAll("#repeatQuickButtons .repeat-mini-btn")],
-
   assigneeBtns: [...document.querySelectorAll("#assigneeToggle .assignee-btn")],
 
   editModal: document.getElementById("editModal"),
@@ -49,6 +64,8 @@ const els = {
   editDueDate: document.getElementById("editDueDate"),
   editRepeatDays: document.getElementById("editRepeatDays"),
   editNotes: document.getElementById("editNotes"),
+  editIsUniqueTask: document.getElementById("editIsUniqueTask"),
+  editAlternateAssignee: document.getElementById("editAlternateAssignee"),
   inactiveFromModalBtn: document.getElementById("inactiveFromModalBtn"),
   editRepeatQuickButtons: [...document.querySelectorAll("#editRepeatQuickButtons .repeat-mini-btn")],
   editAssigneeBtns: [...document.querySelectorAll("#editAssigneeToggle .assignee-btn")],
@@ -134,6 +151,10 @@ function getPersonClass(assignee) {
   return assignee === "Sarah" ? "sarah" : "mathieu";
 }
 
+function getOtherAssignee(currentAssignee) {
+  return currentAssignee === "Sarah" ? "Mathieu" : "Sarah";
+}
+
 function applyActiveStates() {
   els.personTabs.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.person === state.currentPerson);
@@ -154,9 +175,129 @@ function syncRepeatMiniButtons(buttons, value) {
 function syncAssigneeButtons(buttons, hiddenInput, value) {
   hiddenInput.value = value;
   buttons.forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.assignee === value);
-    btn.setAttribute("aria-pressed", btn.dataset.assignee === value ? "true" : "false");
+    const active = btn.dataset.assignee === value;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
   });
+}
+
+function getDeviceId() {
+  let deviceId = localStorage.getItem("cleaning_app_device_id");
+
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem("cleaning_app_device_id", deviceId);
+  }
+
+  return deviceId;
+}
+
+function showTaskPanel() {
+  els.taskFormPanel.classList.remove("hidden-panel");
+}
+
+function hideTaskPanel() {
+  els.taskFormPanel.classList.add("hidden-panel");
+}
+
+async function loadDeviceSettings() {
+  state.deviceId = getDeviceId();
+
+  const { data, error } = await db
+    .from("device_settings")
+    .select("*")
+    .eq("device_id", state.deviceId)
+    .maybeSingle();
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  state.hideTaskPanelByDefault = Boolean(data?.hide_new_task);
+
+  if (state.hideTaskPanelByDefault) {
+    hideTaskPanel();
+  } else {
+    showTaskPanel();
+  }
+}
+
+async function saveDeviceSetting(hideByDefault) {
+  const { error } = await db
+    .from("device_settings")
+    .upsert(
+      {
+        device_id: state.deviceId,
+        hide_new_task: hideByDefault,
+      },
+      { onConflict: "device_id" }
+    );
+
+  if (error) {
+    console.error(error);
+    setMessage(`Erreur lors de la sauvegarde appareil : ${error.message}`, "error");
+    return false;
+  }
+
+  state.hideTaskPanelByDefault = hideByDefault;
+  setMessage(
+    hideByDefault ? "Section nouvelle tâche cachée par défaut." : "Section nouvelle tâche affichée par défaut.",
+    "success"
+  );
+  return true;
+}
+
+function updateCreateRepeatState() {
+  const unique = els.isUniqueTask.checked;
+
+  if (unique) {
+    els.repeatDays.value = "0";
+    els.repeatDays.disabled = true;
+    els.alternateAssignee.checked = false;
+    els.alternateAssignee.disabled = true;
+    els.repeatQuickButtons.forEach((btn) => {
+      btn.classList.remove("active");
+      btn.disabled = true;
+    });
+  } else {
+    els.repeatDays.disabled = false;
+    els.repeatQuickButtons.forEach((btn) => {
+      btn.disabled = false;
+    });
+
+    const repeatValue = Number(els.repeatDays.value || 0);
+    els.alternateAssignee.disabled = repeatValue <= 0;
+    if (repeatValue <= 0) {
+      els.alternateAssignee.checked = false;
+    }
+  }
+}
+
+function updateEditRepeatState() {
+  const unique = els.editIsUniqueTask.checked;
+
+  if (unique) {
+    els.editRepeatDays.value = "0";
+    els.editRepeatDays.disabled = true;
+    els.editAlternateAssignee.checked = false;
+    els.editAlternateAssignee.disabled = true;
+    els.editRepeatQuickButtons.forEach((btn) => {
+      btn.classList.remove("active");
+      btn.disabled = true;
+    });
+  } else {
+    els.editRepeatDays.disabled = false;
+    els.editRepeatQuickButtons.forEach((btn) => {
+      btn.disabled = false;
+    });
+
+    const repeatValue = Number(els.editRepeatDays.value || 0);
+    els.editAlternateAssignee.disabled = repeatValue <= 0;
+    if (repeatValue <= 0) {
+      els.editAlternateAssignee.checked = false;
+    }
+  }
 }
 
 function updateAgendaHeader(filteredCount) {
@@ -236,19 +377,33 @@ function updateSummaryCards() {
   const today = todayString();
   const fiveDaysLater = addDays(today, 4);
 
-  const base = state.tasks.filter(
-    (task) =>
-      task.status === "pending" &&
-      task.due_date >= today &&
-      task.due_date <= fiveDaysLater
+  const pendingTasks = state.tasks.filter((task) => task.status === "pending");
+
+  const next5 = pendingTasks.filter(
+    (task) => task.due_date >= today && task.due_date <= fiveDaysLater
   );
 
-  const mathieu = base.filter((t) => t.assignee === "Mathieu").length;
-  const sarah = base.filter((t) => t.assignee === "Sarah").length;
+  const overdue = pendingTasks.filter((task) => task.due_date < today);
 
-  els.summaryMathieu.textContent = String(mathieu);
-  els.summarySarah.textContent = String(sarah);
-  els.summaryAll.textContent = String(base.length);
+  const mathieuNext5 = next5.filter((t) => t.assignee === "Mathieu").length;
+  const sarahNext5 = next5.filter((t) => t.assignee === "Sarah").length;
+  const allNext5 = next5.length;
+
+  const mathieuOverdue = overdue.filter((t) => t.assignee === "Mathieu").length;
+  const sarahOverdue = overdue.filter((t) => t.assignee === "Sarah").length;
+  const allOverdue = overdue.length;
+
+  els.summaryMathieu.textContent = String(mathieuNext5 + mathieuOverdue);
+  els.summarySarah.textContent = String(sarahNext5 + sarahOverdue);
+  els.summaryAll.textContent = String(allNext5 + allOverdue);
+
+  els.summaryMathieuText.textContent = `${mathieuNext5} dans les 5 prochains jours`;
+  els.summarySarahText.textContent = `${sarahNext5} dans les 5 prochains jours`;
+  els.summaryAllText.textContent = `${allNext5} dans les 5 prochains jours`;
+
+  els.summaryMathieuOverdue.textContent = `${mathieuOverdue} en retard`;
+  els.summarySarahOverdue.textContent = `${sarahOverdue} en retard`;
+  els.summaryAllOverdue.textContent = `${allOverdue} en retard`;
 }
 
 function renderAgenda() {
@@ -321,7 +476,12 @@ function renderTaskCard(task) {
   const repeatText =
     Number(task.repeat_days) > 0
       ? `Tous les ${task.repeat_days} jour(s)`
-      : "Sans répétition";
+      : "Tâche unique";
+
+  const alternateText =
+    Number(task.repeat_days) > 0 && task.alternate_assignee
+      ? `<span class="task-badge">Alterne</span>`
+      : "";
 
   return `
     <article class="task-card ${personClass} ${doneClass} ${inactiveClass} ${overdueClass}">
@@ -338,6 +498,7 @@ function renderTaskCard(task) {
           <div class="task-badges">
             <span class="task-badge">${escapeHtml(task.assignee)}</span>
             <span class="task-badge">${escapeHtml(repeatText)}</span>
+            ${alternateText}
             <span class="task-badge">${
               task.status === "pending"
                 ? "À faire"
@@ -390,13 +551,17 @@ async function fetchTasks() {
 async function addTask(event) {
   event.preventDefault();
 
+  const uniqueTask = els.isUniqueTask.checked;
+  const repeatDays = uniqueTask ? 0 : Number(els.repeatDays.value || 0);
+
   const payload = {
     title: els.title.value.trim(),
     assignee: els.assignee.value,
     due_date: els.dueDate.value,
-    repeat_days: Number(els.repeatDays.value || 0),
+    repeat_days: repeatDays,
     status: "pending",
     notes: els.notes.value.trim() || null,
+    alternate_assignee: !uniqueTask && repeatDays > 0 ? els.alternateAssignee.checked : false,
   };
 
   if (!payload.title || !payload.due_date) {
@@ -418,7 +583,11 @@ async function addTask(event) {
   syncAssigneeButtons(els.assigneeBtns, els.assignee, "Mathieu");
   els.dueDate.value = state.selectedDate;
   els.repeatDays.value = "0";
+  els.isUniqueTask.checked = false;
+  els.alternateAssignee.checked = false;
   syncRepeatMiniButtons(els.repeatQuickButtons, "0");
+  updateCreateRepeatState();
+
   setMessage("Tâche ajoutée.", "success");
 }
 
@@ -432,8 +601,11 @@ function openEditModal(id) {
   els.editDueDate.value = task.due_date;
   els.editRepeatDays.value = String(task.repeat_days ?? 0);
   els.editNotes.value = task.notes || "";
+  els.editIsUniqueTask.checked = Number(task.repeat_days || 0) === 0;
+  els.editAlternateAssignee.checked = Boolean(task.alternate_assignee);
 
   syncRepeatMiniButtons(els.editRepeatQuickButtons, els.editRepeatDays.value);
+  updateEditRepeatState();
   els.editModal.classList.remove("hidden");
 }
 
@@ -445,12 +617,16 @@ async function saveEdit(event) {
   event.preventDefault();
 
   const id = els.editId.value;
+  const uniqueTask = els.editIsUniqueTask.checked;
+  const repeatDays = uniqueTask ? 0 : Number(els.editRepeatDays.value || 0);
+
   const payload = {
     title: els.editTitle.value.trim(),
     assignee: els.editAssignee.value,
     due_date: els.editDueDate.value,
-    repeat_days: Number(els.editRepeatDays.value || 0),
+    repeat_days: repeatDays,
     notes: els.editNotes.value.trim() || null,
+    alternate_assignee: !uniqueTask && repeatDays > 0 ? els.editAlternateAssignee.checked : false,
   };
 
   if (!payload.title || !payload.due_date) {
@@ -525,7 +701,7 @@ function closeCompleteModal() {
   els.completeModal.classList.add("hidden");
 }
 
-async function applyCompletion(task, nextDate = null) {
+async function applyCompletion(task, nextDate = null, nextAssignee = null) {
   const completedDate = todayString();
 
   let payload;
@@ -534,6 +710,7 @@ async function applyCompletion(task, nextDate = null) {
       last_completed_at: completedDate,
       due_date: nextDate,
       status: "pending",
+      assignee: nextAssignee || task.assignee,
     };
   } else {
     payload = {
@@ -575,12 +752,14 @@ async function completeTask(id) {
   const repeatDays = Number(task.repeat_days || 0);
 
   if (repeatDays <= 0) {
-    await applyCompletion(task, null);
+    await applyCompletion(task, null, null);
     return;
   }
 
   if (task.due_date === todayString()) {
-    await applyCompletion(task, addDays(task.due_date, repeatDays));
+    const nextDate = addDays(task.due_date, repeatDays);
+    const nextAssignee = task.alternate_assignee ? getOtherAssignee(task.assignee) : task.assignee;
+    await applyCompletion(task, nextDate, nextAssignee);
     return;
   }
 
@@ -593,9 +772,10 @@ async function handleCompleteFromBase(baseType) {
 
   const baseDate = baseType === "today" ? todayString() : task.due_date;
   const nextDate = addDays(baseDate, Number(task.repeat_days || 0));
+  const nextAssignee = task.alternate_assignee ? getOtherAssignee(task.assignee) : task.assignee;
 
   closeCompleteModal();
-  await applyCompletion(task, nextDate);
+  await applyCompletion(task, nextDate, nextAssignee);
 }
 
 async function handleCompleteManual() {
@@ -608,8 +788,10 @@ async function handleCompleteManual() {
     return;
   }
 
+  const nextAssignee = task.alternate_assignee ? getOtherAssignee(task.assignee) : task.assignee;
+
   closeCompleteModal();
-  await applyCompletion(task, nextDate);
+  await applyCompletion(task, nextDate, nextAssignee);
 }
 
 function handleAgendaClick(event) {
@@ -625,25 +807,37 @@ function handleAgendaClick(event) {
 }
 
 function initRealtime() {
-  db.channel("tasks-realtime-v41")
+  db.channel("tasks-realtime-v42v")
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "tasks" },
       () => fetchTasks()
     )
     .subscribe();
+
+  db.channel("device-settings-realtime-v42v")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "device_settings" },
+      async () => {
+        await loadDeviceSettings();
+      }
+    )
+    .subscribe();
 }
 
-function initRepeatButtons(buttons, input) {
+function initRepeatButtons(buttons, input, callbackAfter = null) {
   buttons.forEach((btn) => {
     btn.addEventListener("click", () => {
       input.value = btn.dataset.repeat;
       syncRepeatMiniButtons(buttons, input.value);
+      if (callbackAfter) callbackAfter();
     });
   });
 
   input.addEventListener("input", () => {
     syncRepeatMiniButtons(buttons, input.value);
+    if (callbackAfter) callbackAfter();
   });
 }
 
@@ -679,6 +873,33 @@ function initEvents() {
   els.taskForm.addEventListener("submit", addTask);
   els.refreshBtn.addEventListener("click", fetchTasks);
   els.goTodayBtn.addEventListener("click", jumpToToday);
+
+  els.showTaskPanelBtn.addEventListener("click", showTaskPanel);
+  els.hideTaskPanelBtn.addEventListener("click", hideTaskPanel);
+
+  els.hideTaskPanelDefaultBtn.addEventListener("click", async () => {
+    const ok = await saveDeviceSetting(true);
+    if (ok) hideTaskPanel();
+  });
+
+  els.showTaskPanelDefaultBtn.addEventListener("click", async () => {
+    const ok = await saveDeviceSetting(false);
+    if (ok) showTaskPanel();
+  });
+
+  els.isUniqueTask.addEventListener("change", updateCreateRepeatState);
+  els.alternateAssignee.addEventListener("change", () => {
+    if (els.alternateAssignee.disabled) {
+      els.alternateAssignee.checked = false;
+    }
+  });
+
+  els.editIsUniqueTask.addEventListener("change", updateEditRepeatState);
+  els.editAlternateAssignee.addEventListener("change", () => {
+    if (els.editAlternateAssignee.disabled) {
+      els.editAlternateAssignee.checked = false;
+    }
+  });
 
   els.statusFilter.addEventListener("change", renderAgenda);
   els.selectedDate.addEventListener("change", () => {
@@ -725,8 +946,8 @@ function initEvents() {
   els.completeFromTodayBtn.addEventListener("click", () => handleCompleteFromBase("today"));
   els.completeManualBtn.addEventListener("click", handleCompleteManual);
 
-  initRepeatButtons(els.repeatQuickButtons, els.repeatDays);
-  initRepeatButtons(els.editRepeatQuickButtons, els.editRepeatDays);
+  initRepeatButtons(els.repeatQuickButtons, els.repeatDays, updateCreateRepeatState);
+  initRepeatButtons(els.editRepeatQuickButtons, els.editRepeatDays, updateEditRepeatState);
 
   initAssigneeButtons(els.assigneeBtns, els.assignee);
   initAssigneeButtons(els.editAssigneeBtns, els.editAssignee);
@@ -734,6 +955,8 @@ function initEvents() {
 
 function initDefaults() {
   state.selectedDate = todayString();
+  state.deviceId = getDeviceId();
+
   els.selectedDate.value = state.selectedDate;
   els.dueDate.value = state.selectedDate;
   els.statusFilter.value = "pending";
@@ -742,6 +965,15 @@ function initDefaults() {
   syncAssigneeButtons(els.editAssigneeBtns, els.editAssignee, "Mathieu");
 
   syncRepeatMiniButtons(els.repeatQuickButtons, els.repeatDays.value);
+  syncRepeatMiniButtons(els.editRepeatQuickButtons, els.editRepeatDays.value);
+
+  els.isUniqueTask.checked = false;
+  els.alternateAssignee.checked = false;
+  els.editIsUniqueTask.checked = false;
+  els.editAlternateAssignee.checked = false;
+
+  updateCreateRepeatState();
+  updateEditRepeatState();
   applyActiveStates();
 }
 
@@ -749,6 +981,7 @@ async function init() {
   initDefaults();
   initEvents();
   initRealtime();
+  await loadDeviceSettings();
   await fetchTasks();
 }
 
