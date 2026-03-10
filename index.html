@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Planning ménage</title>
+
+  <link rel="stylesheet" href="style.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Organisation familiale</p>
+        <h1>Planning ménage</h1>
+        <p class="subtitle">
+          Tâches partagées, récurrentes, synchronisées en direct.
+        </p>
+      </div>
+      <button id="refreshBtn" class="btn btn-secondary" type="button">
+        Rafraîchir
+      </button>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>Ajouter une tâche</h2>
+
+        <form id="taskForm" class="task-form">
+          <div class="field">
+            <label for="title">Tâche</label>
+            <input
+              id="title"
+              name="title"
+              type="text"
+              maxlength="120"
+              placeholder="Ex : Passer l’aspirateur au salon"
+              required
+            />
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="assignee">Assigné à</label>
+              <input
+                id="assignee"
+                name="assignee"
+                type="text"
+                maxlength="60"
+                placeholder="Ex : Julie"
+              />
+            </div>
+
+            <div class="field">
+              <label for="dueDate">Date prévue</label>
+              <input id="dueDate" name="dueDate" type="date" required />
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="repeatDays">Répétition (jours)</label>
+              <input
+                id="repeatDays"
+                name="repeatDays"
+                type="number"
+                min="0"
+                step="1"
+                value="0"
+                placeholder="0 = pas de répétition"
+              />
+            </div>
+
+            <div class="field">
+              <label for="notes">Note</label>
+              <input
+                id="notes"
+                name="notes"
+                type="text"
+                maxlength="200"
+                placeholder="Optionnel"
+              />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn" type="submit">Ajouter la tâche</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Filtres</h2>
+
+        <div class="filters">
+          <div class="field">
+            <label for="filterStatus">Statut</label>
+            <select id="filterStatus">
+              <option value="pending">À faire</option>
+              <option value="all">Toutes</option>
+              <option value="done">Terminées</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="filterAssignee">Personne</label>
+            <select id="filterAssignee">
+              <option value="">Tout le monde</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="searchInput">Recherche</label>
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="Chercher une tâche"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <h2>Liste des tâches</h2>
+          <span id="countBadge" class="count-badge">0</span>
+        </div>
+
+        <div id="statusMessage" class="status-message"></div>
+
+        <div id="taskList" class="task-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
