@@ -319,22 +319,43 @@ async function completeTask(id) {
   if (!task) return;
 
   const completedDate = todayString();
+  const repeatDays = Number(task.repeat_days || 0);
+  let nextDate = null;
+  let updatePayload = {};
 
-  const updatePayload =
-    Number(task.repeat_days) > 0
-      ? {
-          last_completed_at: completedDate,
-          due_date: addDays(completedDate, task.repeat_days),
-          status: "pending",
-        }
-      : {
-          last_completed_at: completedDate,
-          status: "done",
-        };
+  if (repeatDays > 0) {
+    let baseDate = task.due_date;
+
+    if (task.due_date !== completedDate) {
+      const useTodayAsBase = window.confirm(
+        `Cette tâche était prévue pour le ${formatDateShort(task.due_date)}.\n\n` +
+        `Clique sur OK pour calculer la prochaine occurrence à partir d'aujourd'hui (${formatDateShort(completedDate)}).\n` +
+        `Clique sur Annuler pour la calculer à partir de la date prévue.`
+      );
+
+      baseDate = useTodayAsBase ? completedDate : task.due_date;
+    }
+
+    nextDate = addDays(baseDate, repeatDays);
+
+    updatePayload = {
+      last_completed_at: completedDate,
+      due_date: nextDate,
+      status: "pending",
+    };
+  } else {
+    updatePayload = {
+      last_completed_at: completedDate,
+      status: "done",
+    };
+  }
 
   setMessage("Mise à jour en cours...");
 
-  const { error } = await db.from("tasks").update(updatePayload).eq("id", id);
+  const { error } = await db
+    .from("tasks")
+    .update(updatePayload)
+    .eq("id", id);
 
   if (error) {
     console.error(error);
@@ -342,7 +363,19 @@ async function completeTask(id) {
     return;
   }
 
-  setMessage("Tâche mise à jour.", "success");
+  if (nextDate && state.currentView === "day") {
+    state.selectedDate = nextDate;
+    els.selectedDate.value = nextDate;
+  }
+
+  await fetchTasks();
+
+  setMessage(
+    nextDate
+      ? `Tâche validée. Prochaine occurrence : ${formatDateShort(nextDate)}`
+      : "Tâche terminée.",
+    "success"
+  );
 }
 
 function openEditModal(id) {
