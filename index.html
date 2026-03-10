@@ -13,15 +13,15 @@
       <div>
         <p class="eyebrow">Organisation maison</p>
         <h1>Planning ménage</h1>
-        <p class="subtitle">Vue mobile, tâches récurrentes, synchronisation en direct.</p>
+        <p class="subtitle">Limelette </p>
       </div>
       <button id="refreshBtn" class="icon-btn" type="button" aria-label="Rafraîchir">↻</button>
     </header>
 
     <nav class="person-switch">
-      <button class="person-tab active" data-person="Mathieu">Mathieu</button>
+      <button class="person-tab neutral active" data-person="all">Tous</button>
+      <button class="person-tab" data-person="Mathieu">Mathieu</button>
       <button class="person-tab" data-person="Sarah">Sarah</button>
-      <button class="person-tab neutral" data-person="all">Tous</button>
     </nav>
 
     <section class="panel form-panel">
@@ -50,16 +50,30 @@
           </div>
         </div>
 
-        <div class="grid-2">
-          <div class="field">
-            <label for="repeatDays">Répétition (jours)</label>
+        <div class="field">
+          <label for="repeatDays">Répétition (jours)</label>
+
+          <div class="repeat-picker">
+            <div class="repeat-quick" id="repeatQuickButtons">
+              <button type="button" class="repeat-mini-btn" data-repeat="1">1</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="2">2</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="3">3</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="4">4</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="5">5</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="6">6</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="7">7</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="8">8</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="9">9</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="10">10</button>
+            </div>
+
             <input id="repeatDays" name="repeatDays" type="number" min="0" step="1" value="0" />
           </div>
+        </div>
 
-          <div class="field">
-            <label for="notes">Note</label>
-            <input id="notes" name="notes" type="text" maxlength="200" placeholder="Optionnel" />
-          </div>
+        <div class="field">
+          <label for="notes">Note</label>
+          <input id="notes" name="notes" type="text" maxlength="200" placeholder="Optionnel" />
         </div>
 
         <button class="primary-btn full-btn" type="submit">Ajouter la tâche</button>
@@ -89,6 +103,7 @@
             <option value="pending">À faire</option>
             <option value="all">Toutes</option>
             <option value="done">Terminées</option>
+            <option value="inactive">Inactives</option>
           </select>
         </div>
       </div>
@@ -139,23 +154,69 @@
           </div>
         </div>
 
-        <div class="grid-2">
-          <div class="field">
-            <label for="editRepeatDays">Répétition (jours)</label>
+        <div class="field">
+          <label for="editRepeatDays">Répétition (jours)</label>
+
+          <div class="repeat-picker">
+            <div class="repeat-quick" id="editRepeatQuickButtons">
+              <button type="button" class="repeat-mini-btn" data-repeat="1">1</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="2">2</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="3">3</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="4">4</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="5">5</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="6">6</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="7">7</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="8">8</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="9">9</button>
+              <button type="button" class="repeat-mini-btn" data-repeat="10">10</button>
+            </div>
+
             <input id="editRepeatDays" type="number" min="0" step="1" required />
           </div>
+        </div>
 
-          <div class="field">
-            <label for="editNotes">Note</label>
-            <input id="editNotes" type="text" maxlength="200" />
-          </div>
+        <div class="field">
+          <label for="editNotes">Note</label>
+          <input id="editNotes" type="text" maxlength="200" />
         </div>
 
         <div class="modal-actions">
           <button class="primary-btn" type="submit">Enregistrer</button>
-          <button id="deleteFromModalBtn" class="danger-btn" type="button">Supprimer</button>
+          <button id="inactiveFromModalBtn" class="secondary-btn" type="button">Mettre inactive</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div id="completeModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card futuristic-card">
+      <div class="modal-header">
+        <h3>Valider la tâche</h3>
+        <button id="closeCompleteModalBtn" class="close-btn" type="button">✕</button>
+      </div>
+
+      <div class="complete-modal-body">
+        <p id="completeModalText" class="complete-text"></p>
+
+        <div class="complete-options">
+          <button id="completeFromDueBtn" class="option-btn" type="button">
+            Depuis la date prévue
+          </button>
+
+          <button id="completeFromTodayBtn" class="option-btn" type="button">
+            Depuis aujourd’hui
+          </button>
+        </div>
+
+        <div class="manual-next-block">
+          <label for="manualNextDate">Prochaine occurrence</label>
+          <input id="manualNextDate" type="date" />
+          <button id="completeManualBtn" class="primary-btn full-btn" type="button">
+            Valider avec cette date
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
