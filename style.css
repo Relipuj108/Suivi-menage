@@ -931,3 +931,7 @@ select:focus {
   border-color: rgba(148, 163, 184, 0.55);
   box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.16), 0 12px 24px rgba(148, 163, 184, 0.14);
 }
+.task-card.all-people {
+  background: rgba(245, 247, 252, 0.95);
+  border-color: rgba(170, 186, 216, 0.36);
+}
