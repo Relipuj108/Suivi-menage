@@ -148,11 +148,15 @@ function setMessage(message = "", type = "") {
 }
 
 function getPersonClass(assignee) {
-  return assignee === "Sarah" ? "sarah" : "mathieu";
+  if (assignee === "Sarah") return "sarah";
+  if (assignee === "Tout le monde") return "all-people";
+  return "mathieu";
 }
 
 function getOtherAssignee(currentAssignee) {
-  return currentAssignee === "Sarah" ? "Mathieu" : "Sarah";
+  if (currentAssignee === "Mathieu") return "Sarah";
+  if (currentAssignee === "Sarah") return "Mathieu";
+  return "Tout le monde";
 }
 
 function applyActiveStates() {
@@ -250,6 +254,7 @@ async function saveDeviceSetting(hideByDefault) {
 
 function updateCreateRepeatState() {
   const unique = els.isUniqueTask.checked;
+  const assigneeIsAll = els.assignee.value === "Tout le monde";
 
   if (unique) {
     els.repeatDays.value = "0";
@@ -267,8 +272,10 @@ function updateCreateRepeatState() {
     });
 
     const repeatValue = Number(els.repeatDays.value || 0);
-    els.alternateAssignee.disabled = repeatValue <= 0;
-    if (repeatValue <= 0) {
+    const disableAlternate = repeatValue <= 0 || assigneeIsAll;
+
+    els.alternateAssignee.disabled = disableAlternate;
+    if (disableAlternate) {
       els.alternateAssignee.checked = false;
     }
   }
@@ -276,6 +283,7 @@ function updateCreateRepeatState() {
 
 function updateEditRepeatState() {
   const unique = els.editIsUniqueTask.checked;
+  const assigneeIsAll = els.editAssignee.value === "Tout le monde";
 
   if (unique) {
     els.editRepeatDays.value = "0";
@@ -293,8 +301,10 @@ function updateEditRepeatState() {
     });
 
     const repeatValue = Number(els.editRepeatDays.value || 0);
-    els.editAlternateAssignee.disabled = repeatValue <= 0;
-    if (repeatValue <= 0) {
+    const disableAlternate = repeatValue <= 0 || assigneeIsAll;
+
+    els.editAlternateAssignee.disabled = disableAlternate;
+    if (disableAlternate) {
       els.editAlternateAssignee.checked = false;
     }
   }
@@ -841,10 +851,11 @@ function initRepeatButtons(buttons, input, callbackAfter = null) {
   });
 }
 
-function initAssigneeButtons(buttons, input) {
+function initAssigneeButtons(buttons, input, afterChange = null) {
   buttons.forEach((btn) => {
     btn.addEventListener("click", () => {
       syncAssigneeButtons(buttons, input, btn.dataset.assignee);
+      if (afterChange) afterChange();
     });
   });
 }
@@ -949,8 +960,8 @@ function initEvents() {
   initRepeatButtons(els.repeatQuickButtons, els.repeatDays, updateCreateRepeatState);
   initRepeatButtons(els.editRepeatQuickButtons, els.editRepeatDays, updateEditRepeatState);
 
-  initAssigneeButtons(els.assigneeBtns, els.assignee);
-  initAssigneeButtons(els.editAssigneeBtns, els.editAssignee);
+initAssigneeButtons(els.assigneeBtns, els.assignee, updateCreateRepeatState);
+initAssigneeButtons(els.editAssigneeBtns, els.editAssignee, updateEditRepeatState);
 }
 
 function initDefaults() {
