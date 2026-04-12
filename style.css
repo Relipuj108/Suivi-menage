@@ -1172,7 +1172,8 @@ select:focus {
 
 .preset-item {
   display: grid;
-  grid-template-columns: 1fr 100px 100px auto;
+  grid-template-columns: minmax(0, 1.4fr) 90px 90px minmax(0, 1fr) auto;
+  grid-template-areas: "label qty unit category actions";
   gap: 8px;
   align-items: center;
   padding: 10px;
@@ -1180,11 +1181,17 @@ select:focus {
   background: rgba(255,255,255,0.72);
   border: 1px solid rgba(182, 194, 219, 0.24);
 }
+.preset-item input[type="text"][data-preset-edit-label] {
+  grid-area: label;
+  min-width: 0;
+}
+
+.preset-item input[type="number"][data-preset-edit-value] {
+  grid-area: qty;
+  min-width: 0;
+}
 
 @media (max-width: 760px) {
-  .shopping-inline-form {
-    grid-template-columns: 1fr;
-  }
 
   .preset-item {
     grid-template-columns: 1fr;
