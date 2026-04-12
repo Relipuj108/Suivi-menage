@@ -3,23 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Planning ménage</title>
+  <title>Organisateur de maison</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="apple-touch-icon" href="./images/menage.png">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="app-shell">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Organisation maison</p>
-        <h1>Planning ménage</h1>
-        <p class="subtitle">Vue agenda, tâches récurrentes, interface mobile moderne.</p>
-      </div>
-      <button id="refreshBtn" class="icon-btn" type="button" aria-label="Rafraîchir">↻</button>
-    </header>
-
-    <section class="mode-switch">
+        <section class="mode-switch">
       <button class="mode-card active" data-mode="menage" type="button">
         <span class="mode-emoji">🧹</span>
         <span class="mode-label">Ménage</span>
@@ -35,6 +26,16 @@
         <span class="mode-label">Check-lists</span>
       </button>
     </section>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Organisation maison</p>
+        <h1>Planning ménage</h1>
+        <p class="subtitle">Vue agenda, tâches récurrentes, interface mobile moderne.</p>
+      </div>
+      <button id="refreshBtn" class="icon-btn" type="button" aria-label="Rafraîchir">↻</button>
+    </header>
+
+
 
     <div id="modeMenage">
       <section class="summary-strip">
