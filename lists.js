@@ -7,6 +7,7 @@ const listState = {
 
   shoppingLists: [],
   shoppingItems: [],
+  shoppingItemsAll: [],
   shoppingPresets: [],
   activeShoppingListId: null,
   activePresetCategory: null,
@@ -23,6 +24,7 @@ const listEls = {
   modeChecklists: document.getElementById("modeChecklists"),
 
   createShoppingListBtn: document.getElementById("createShoppingListBtn"),
+  deleteShoppingListBtn: document.getElementById("deleteShoppingListBtn"),
   shoppingListsTabs: document.getElementById("shoppingListsTabs"),
   shoppingPresetCategories: document.getElementById("shoppingPresetCategories"),
   shoppingItemForm: document.getElementById("shoppingItemForm"),
@@ -37,8 +39,6 @@ const listEls = {
   closeShoppingListModalBtn: document.getElementById("closeShoppingListModalBtn"),
   shoppingListForm: document.getElementById("shoppingListForm"),
   shoppingListTitle: document.getElementById("shoppingListTitle"),
-
-  deleteShoppingListBtn: document.getElementById("deleteShoppingListBtn"),
 
   shoppingPresetForm: document.getElementById("shoppingPresetForm"),
   shoppingPresetNewCategory: document.getElementById("shoppingPresetNewCategory"),
@@ -73,6 +73,21 @@ function switchMode(mode) {
   listEls.modeChecklists.classList.toggle("hidden-panel", mode !== "checklists");
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatUnit(unit) {
+  if (!unit) return "";
+  if (unit === "piece") return "pc";
+  return unit;
+}
+
 async function loadShoppingLists() {
   const { data, error } = await listsDb
     .from("shopping_lists")
@@ -86,14 +101,33 @@ async function loadShoppingLists() {
 
   listState.shoppingLists = data || [];
 
-  const activeLists = listState.shoppingLists.filter((l) => l.status === "active");
-  if (!listState.activeShoppingListId || !activeLists.some((l) => l.id === listState.activeShoppingListId)) {
+  const activeLists = listState.shoppingLists.filter((list) => list.status === "active");
+  if (
+    !listState.activeShoppingListId ||
+    !activeLists.some((list) => list.id === listState.activeShoppingListId)
+  ) {
     listState.activeShoppingListId = activeLists[0]?.id || null;
   }
 
   renderShoppingTabs();
-  renderShoppingArchivedLists();
+  await loadAllShoppingItems();
   await loadShoppingItems();
+  renderShoppingArchivedLists();
+}
+
+async function loadAllShoppingItems() {
+  const { data, error } = await listsDb
+    .from("shopping_items")
+    .select("*")
+    .order("shopping_list_id", { ascending: true })
+    .order("position", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  listState.shoppingItemsAll = data || [];
 }
 
 async function loadShoppingItems() {
@@ -135,13 +169,17 @@ async function loadShoppingPresets() {
 }
 
 function renderShoppingTabs() {
-  const activeLists = listState.shoppingLists.filter((l) => l.status === "active");
+  const activeLists = listState.shoppingLists.filter((list) => list.status === "active");
 
   listEls.shoppingListsTabs.innerHTML = activeLists.length
     ? activeLists
         .map(
           (list) => `
-            <button class="list-tab ${list.id === listState.activeShoppingListId ? "active" : ""}" data-shopping-list-id="${list.id}">
+            <button
+              class="list-tab ${list.id === listState.activeShoppingListId ? "active" : ""}"
+              data-shopping-list-id="${list.id}"
+              type="button"
+            >
               ${escapeHtml(list.title)}
             </button>
           `
@@ -154,49 +192,321 @@ function renderShoppingTabs() {
 }
 
 function renderShoppingArchivedLists() {
-  const archived = listState.shoppingLists.filter((l) => l.status === "archived");
+  const archivedLists = listState.shoppingLists.filter((list) => list.status === "archived");
 
-  listEls.shoppingArchivedLists.innerHTML = archived.length
-    ? archived
-        .map(
-          (list) => `
+  listEls.shoppingArchivedLists.innerHTML = archivedLists.length
+    ? archivedLists
+        .map((list) => {
+          const deletedCount = listState.shoppingItemsAll.filter(
+            (item) => item.shopping_list_id === list.id && item.status === "deleted"
+          ).length;
+
+          const checkedCount = listState.shoppingItemsAll.filter(
+            (item) => item.shopping_list_id === list.id && item.status === "active" && item.is_checked
+          ).length;
+
+          const activeCount = listState.shoppingItemsAll.filter(
+            (item) => item.shopping_list_id === list.id && item.status === "active"
+          ).length;
+
+          return `
             <div class="history-card">
               <p class="history-title">${escapeHtml(list.title)}</p>
-              <p class="history-meta">Archivée</p>
+              <p class="history-meta">
+                Archivée · ${activeCount} article(s) actif(s) · ${checkedCount} coché(s) · ${deletedCount} supprimé(s)
+              </p>
             </div>
-          `
-        )
+          `;
+        })
         .join("")
     : `<div class="empty-state">Pas d’historique.</div>`;
 }
 
 function renderPresetCategories() {
-  const categories = [...new Set(listState.shoppingPresets.map((p) => p.category))].sort();
+  const categories = [...new Set(listState.shoppingPresets.map((item) => item.category))].sort();
 
-  listEls.shoppingPresetExistingCategory.innerHTML =
-    `<option value="">Choisir une catégorie existante</option>` +
-    categories
-      .map(
-        (category) =>
-          `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`
-      )
-      .join("");
+  if (listEls.shoppingPresetExistingCategory) {
+    listEls.shoppingPresetExistingCategory.innerHTML =
+      `<option value="">Choisir une catégorie existante</option>` +
+      categories
+        .map(
+          (category) =>
+            `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`
+        )
+        .join("");
+  }
 
   listEls.shoppingPresetCategories.innerHTML = categories
     .map(
       (category) => `
-        <button class="preset-category-btn ${listState.activePresetCategory === category ? "active" : ""}" data-preset-category="${escapeHtml(category)}">
+        <button
+          class="preset-category-btn ${listState.activePresetCategory === category ? "active" : ""}"
+          data-preset-category="${escapeHtml(category)}"
+          type="button"
+        >
           ${escapeHtml(category)}
         </button>
       `
     )
     .join("");
 
-  if (!listState.activePresetCategory && categories.length) {
+  if (!categories.length) {
+    listState.activePresetCategory = null;
+    const old = document.getElementById("presetCategoryItems");
+    if (old) old.remove();
+    return;
+  }
+
+  if (!listState.activePresetCategory || !categories.includes(listState.activePresetCategory)) {
     listState.activePresetCategory = categories[0];
   }
 
   renderPresetCategoryItems();
+}
+
+function renderPresetCategoryItems() {
+  const old = document.getElementById("presetCategoryItems");
+  if (old) old.remove();
+
+  if (!listState.activePresetCategory) return;
+
+  const items = listState.shoppingPresets.filter(
+    (item) => item.category === listState.activePresetCategory
+  );
+  const categories = [...new Set(listState.shoppingPresets.map((item) => item.category))].sort();
+
+  const wrapper = document.createElement("div");
+  wrapper.id = "presetCategoryItems";
+  wrapper.className = "preset-items-grid";
+
+  wrapper.innerHTML = items.length
+    ? items
+        .map(
+          (item) => `
+            <div class="preset-item">
+              <input
+                type="text"
+                value="${escapeHtml(item.label)}"
+                data-preset-edit-label="${item.id}"
+              />
+
+              <input
+                type="number"
+                step="0.01"
+                value="${item.quantity_value ?? ""}"
+                data-preset-edit-value="${item.id}"
+              />
+
+              <select data-preset-edit-unit="${item.id}">
+                <option value="piece" ${item.quantity_unit === "piece" ? "selected" : ""}>Nombre</option>
+                <option value="kg" ${item.quantity_unit === "kg" ? "selected" : ""}>kg</option>
+                <option value="g" ${item.quantity_unit === "g" ? "selected" : ""}>g</option>
+                <option value="l" ${item.quantity_unit === "l" ? "selected" : ""}>L</option>
+                <option value="ml" ${item.quantity_unit === "ml" ? "selected" : ""}>ml</option>
+              </select>
+
+              <select data-preset-edit-category="${item.id}">
+                ${categories
+                  .map(
+                    (category) => `
+                      <option value="${escapeHtml(category)}" ${item.category === category ? "selected" : ""}>
+                        ${escapeHtml(category)}
+                      </option>
+                    `
+                  )
+                  .join("")}
+              </select>
+
+              <div class="item-side-actions">
+                <button class="small-pill-btn" type="button" data-save-preset-item="${item.id}">Enregistrer</button>
+                <button class="small-pill-btn" type="button" data-delete-preset-item="${item.id}">Supprimer</button>
+                <button class="primary-btn" type="button" data-add-preset-item="${item.id}">Ajouter</button>
+              </div>
+            </div>
+          `
+        )
+        .join("")
+    : `<div class="empty-state">Aucun article prédéfini dans cette catégorie.</div>`;
+
+  listEls.shoppingPresetCategories.insertAdjacentElement("afterend", wrapper);
+}
+
+function renderShoppingItems() {
+  const filter = listEls.shoppingFilter.value;
+  let items = [...listState.shoppingItems].filter((item) => item.status === "active");
+
+  if (filter === "unchecked") {
+    items = items.filter((item) => !item.is_checked);
+  } else if (filter === "checked") {
+    items = items.filter((item) => item.is_checked);
+  }
+
+  listEls.shoppingItemsContainer.innerHTML = items.length
+    ? items
+        .map(
+          (item) => `
+            <div
+              class="sortable-item ${item.is_checked ? "checked" : ""}"
+              draggable="true"
+              data-shopping-item-id="${item.id}"
+            >
+              <div class="sort-handle">⋮⋮</div>
+
+              <div class="sortable-main">
+                <p class="sortable-title">${escapeHtml(item.label)}</p>
+                <p class="sortable-meta">${item.quantity_value ?? ""} ${formatUnit(item.quantity_unit)}</p>
+              </div>
+
+              <div class="item-side-actions">
+                <button
+                  class="item-check-btn ${item.is_checked ? "checked" : ""}"
+                  data-shopping-toggle="${item.id}"
+                  type="button"
+                >
+                  ${item.is_checked ? "✓" : ""}
+                </button>
+                <button class="small-pill-btn" data-shopping-edit="${item.id}" type="button">Modifier</button>
+                <button class="small-pill-btn" data-shopping-delete="${item.id}" type="button">Supprimer</button>
+              </div>
+            </div>
+          `
+        )
+        .join("")
+    : `<div class="empty-state">Aucun article.</div>`;
+}
+
+async function createShoppingList(title) {
+  if (!title) return;
+
+  const activeCount = listState.shoppingLists.filter((list) => list.status === "active").length;
+  if (activeCount >= 3) {
+    alert("Maximum 3 listes de courses actives.");
+    return;
+  }
+
+  const { error } = await listsDb.from("shopping_lists").insert({
+    title,
+    status: "active",
+  });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  await loadShoppingLists();
+}
+
+async function addShoppingItem(item) {
+  if (!listState.activeShoppingListId) {
+    alert("Crée d'abord une liste de courses.");
+    return;
+  }
+
+  if (!item.label) return;
+
+  const maxPosition = listState.shoppingItems.length
+    ? Math.max(...listState.shoppingItems.map((currentItem) => currentItem.position))
+    : 0;
+
+  const { error } = await listsDb.from("shopping_items").insert({
+    shopping_list_id: listState.activeShoppingListId,
+    label: item.label,
+    quantity_value: item.quantity_value,
+    quantity_unit: item.quantity_unit,
+    category: item.category || null,
+    position: maxPosition + 1,
+    status: "active",
+  });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  await loadShoppingLists();
+}
+
+async function toggleShoppingItem(id, checked) {
+  const { error } = await listsDb
+    .from("shopping_items")
+    .update({ is_checked: !checked })
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  await loadShoppingItems();
+}
+
+async function softDeleteShoppingItem(id) {
+  const { error } = await listsDb
+    .from("shopping_items")
+    .update({ status: "deleted" })
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  await loadShoppingLists();
+}
+
+async function editShoppingItem(id) {
+  const item = listState.shoppingItems.find((currentItem) => currentItem.id === id);
+  if (!item) return;
+
+  const newLabel = window.prompt("Article", item.label);
+  if (newLabel === null) return;
+
+  const newValue = window.prompt("Quantité", item.quantity_value ?? "");
+  if (newValue === null) return;
+
+  const newUnit = window.prompt("Unité (piece/kg/g/l/ml)", item.quantity_unit ?? "piece");
+  if (newUnit === null) return;
+
+  const { error } = await listsDb
+    .from("shopping_items")
+    .update({
+      label: newLabel.trim(),
+      quantity_value: newValue ? Number(newValue) : null,
+      quantity_unit: newUnit || "piece",
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  await loadShoppingItems();
+}
+
+async function archiveShoppingList(id) {
+  const list = listState.shoppingLists.find((currentList) => currentList.id === id);
+  if (!list) return;
+
+  const confirmed = window.confirm(`Archiver la liste "${list.title}" ?`);
+  if (!confirmed) return;
+
+  const { error } = await listsDb
+    .from("shopping_lists")
+    .update({ status: "archived" })
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  await loadShoppingLists();
+}
+
+async function deleteShoppingList(id) {
+  await archiveShoppingList(id);
 }
 
 async function addShoppingPresetItem({
@@ -235,18 +545,37 @@ async function addShoppingPresetItem({
   await loadShoppingPresets();
 }
 
-async function deleteShoppingList(id) {
-  const list = listState.shoppingLists.find((l) => l.id === id);
-  if (!list) return;
+async function saveShoppingPresetItem(id) {
+  const labelInput = document.querySelector(`[data-preset-edit-label="${id}"]`);
+  const valueInput = document.querySelector(`[data-preset-edit-value="${id}"]`);
+  const unitInput = document.querySelector(`[data-preset-edit-unit="${id}"]`);
+  const categoryInput = document.querySelector(`[data-preset-edit-category="${id}"]`);
 
-  const confirmed = window.confirm(
-    `Supprimer complètement la liste "${list.title}" ?\n\nCette action supprimera aussi tous ses articles.`
-  );
+  const { error } = await listsDb
+    .from("shopping_presets")
+    .update({
+      label: labelInput?.value?.trim() || "",
+      quantity_value: valueInput?.value ? Number(valueInput.value) : null,
+      quantity_unit: unitInput?.value || "piece",
+      category: categoryInput?.value || "",
+    })
+    .eq("id", id);
 
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  listState.activePresetCategory = categoryInput?.value || listState.activePresetCategory;
+  await loadShoppingPresets();
+}
+
+async function deleteShoppingPresetItem(id) {
+  const confirmed = window.confirm("Supprimer cet article prédéfini ?");
   if (!confirmed) return;
 
   const { error } = await listsDb
-    .from("shopping_lists")
+    .from("shopping_presets")
     .delete()
     .eq("id", id);
 
@@ -255,164 +584,7 @@ async function deleteShoppingList(id) {
     return;
   }
 
-  await loadShoppingLists();
-}
-
-function renderPresetCategoryItems() {
-  const old = document.getElementById("presetCategoryItems");
-  if (old) old.remove();
-
-  if (!listState.activePresetCategory) return;
-
-  const items = listState.shoppingPresets.filter((p) => p.category === listState.activePresetCategory);
-
-  const wrapper = document.createElement("div");
-  wrapper.id = "presetCategoryItems";
-  wrapper.className = "preset-items-grid";
-
-  wrapper.innerHTML = items
-    .map(
-      (item) => `
-        <div class="preset-item">
-          <strong>${escapeHtml(item.label)}</strong>
-          <input type="number" step="0.01" value="${item.quantity_value ?? ""}" data-preset-value="${item.id}" />
-          <select data-preset-unit="${item.id}">
-            <option value="piece" ${item.quantity_unit === "piece" ? "selected" : ""}>Nombre</option>
-            <option value="kg" ${item.quantity_unit === "kg" ? "selected" : ""}>kg</option>
-            <option value="g" ${item.quantity_unit === "g" ? "selected" : ""}>g</option>
-            <option value="l" ${item.quantity_unit === "l" ? "selected" : ""}>L</option>
-            <option value="ml" ${item.quantity_unit === "ml" ? "selected" : ""}>ml</option>
-          </select>
-          <button class="primary-btn" type="button" data-add-preset-item="${item.id}">Ajouter</button>
-        </div>
-      `
-    )
-    .join("");
-
-  listEls.shoppingPresetCategories.insertAdjacentElement("afterend", wrapper);
-}
-
-function renderShoppingItems() {
-  const filter = listEls.shoppingFilter.value;
-  let items = [...listState.shoppingItems];
-
-  if (filter === "unchecked") {
-    items = items.filter((i) => !i.is_checked);
-  } else if (filter === "checked") {
-    items = items.filter((i) => i.is_checked);
-  }
-
-  listEls.shoppingItemsContainer.innerHTML = items.length
-    ? items
-        .map(
-          (item) => `
-            <div class="sortable-item ${item.is_checked ? "checked" : ""}" draggable="true" data-shopping-item-id="${item.id}">
-              <div class="sort-handle">⋮⋮</div>
-
-              <div class="sortable-main">
-                <p class="sortable-title">${escapeHtml(item.label)}</p>
-                <p class="sortable-meta">
-                  ${item.quantity_value ?? ""} ${formatUnit(item.quantity_unit)}
-                </p>
-              </div>
-
-              <button class="item-check-btn ${item.is_checked ? "checked" : ""}" data-shopping-toggle="${item.id}">
-                ${item.is_checked ? "✓" : ""}
-              </button>
-
-              <div class="item-side-actions">
-                <button class="small-pill-btn" data-shopping-edit="${item.id}">Modifier</button>
-                <button class="small-pill-btn" data-shopping-delete="${item.id}">Supprimer</button>
-              </div>
-            </div>
-          `
-        )
-        .join("")
-    : `<div class="empty-state">Aucun article.</div>`;
-}
-
-async function createShoppingList(title) {
-  const activeCount = listState.shoppingLists.filter((l) => l.status === "active").length;
-  if (activeCount >= 3) {
-    alert("Maximum 3 listes de courses actives.");
-    return;
-  }
-
-  const { error } = await listsDb.from("shopping_lists").insert({
-    title,
-    status: "active",
-  });
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  await loadShoppingLists();
-}
-
-async function addShoppingItem(item) {
-  if (!listState.activeShoppingListId) {
-    alert("Crée d'abord une liste de courses.");
-    return;
-  }
-
-  const maxPosition = listState.shoppingItems.length
-    ? Math.max(...listState.shoppingItems.map((i) => i.position))
-    : 0;
-
-  const { error } = await listsDb.from("shopping_items").insert({
-    shopping_list_id: listState.activeShoppingListId,
-    label: item.label,
-    quantity_value: item.quantity_value,
-    quantity_unit: item.quantity_unit,
-    category: item.category || null,
-    position: maxPosition + 1,
-  });
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  await loadShoppingItems();
-}
-
-async function toggleShoppingItem(id, checked) {
-  const { error } = await listsDb
-    .from("shopping_items")
-    .update({ is_checked: !checked })
-    .eq("id", id);
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  await loadShoppingItems();
-}
-
-async function deleteShoppingItem(id) {
-  const { error } = await listsDb.from("shopping_items").delete().eq("id", id);
-  if (error) {
-    console.error(error);
-    return;
-  }
-  await loadShoppingItems();
-}
-
-async function archiveShoppingList(id) {
-  const { error } = await listsDb
-    .from("shopping_lists")
-    .update({ status: "archived" })
-    .eq("id", id);
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  await loadShoppingLists();
+  await loadShoppingPresets();
 }
 
 async function loadChecklists() {
@@ -428,8 +600,11 @@ async function loadChecklists() {
 
   listState.checklists = data || [];
 
-  const activeLists = listState.checklists.filter((l) => l.status === "active");
-  if (!listState.activeChecklistId || !activeLists.some((l) => l.id === listState.activeChecklistId)) {
+  const activeLists = listState.checklists.filter((list) => list.status === "active");
+  if (
+    !listState.activeChecklistId ||
+    !activeLists.some((list) => list.id === listState.activeChecklistId)
+  ) {
     listState.activeChecklistId = activeLists[0]?.id || null;
   }
 
@@ -461,13 +636,17 @@ async function loadChecklistItems() {
 }
 
 function renderChecklistTabs() {
-  const activeLists = listState.checklists.filter((l) => l.status === "active");
+  const activeLists = listState.checklists.filter((list) => list.status === "active");
 
   listEls.checklistTabs.innerHTML = activeLists.length
     ? activeLists
         .map(
           (list) => `
-            <button class="list-tab ${list.id === listState.activeChecklistId ? "active" : ""}" data-checklist-id="${list.id}">
+            <button
+              class="list-tab ${list.id === listState.activeChecklistId ? "active" : ""}"
+              data-checklist-id="${list.id}"
+              type="button"
+            >
               ${escapeHtml(list.title)}
             </button>
           `
@@ -479,7 +658,7 @@ function renderChecklistTabs() {
 }
 
 function renderChecklistArchivedLists() {
-  const archived = listState.checklists.filter((l) => l.status === "archived");
+  const archived = listState.checklists.filter((list) => list.status === "archived");
 
   listEls.checklistArchivedLists.innerHTML = archived.length
     ? archived
@@ -500,29 +679,36 @@ function renderChecklistItems() {
   let items = [...listState.checklistItems];
 
   if (filter === "unchecked") {
-    items = items.filter((i) => !i.is_checked);
+    items = items.filter((item) => !item.is_checked);
   } else if (filter === "checked") {
-    items = items.filter((i) => i.is_checked);
+    items = items.filter((item) => item.is_checked);
   }
 
   listEls.checklistItemsContainer.innerHTML = items.length
     ? items
         .map(
           (item) => `
-            <div class="sortable-item ${item.is_checked ? "checked" : ""}" draggable="true" data-checklist-item-id="${item.id}">
+            <div
+              class="sortable-item ${item.is_checked ? "checked" : ""}"
+              draggable="true"
+              data-checklist-item-id="${item.id}"
+            >
               <div class="sort-handle">⋮⋮</div>
 
               <div class="sortable-main">
                 <p class="sortable-title">${escapeHtml(item.label)}</p>
               </div>
 
-              <button class="item-check-btn ${item.is_checked ? "checked" : ""}" data-checklist-toggle="${item.id}">
-                ${item.is_checked ? "✓" : ""}
-              </button>
-
               <div class="item-side-actions">
-                <button class="small-pill-btn" data-checklist-edit="${item.id}">Modifier</button>
-                <button class="small-pill-btn" data-checklist-delete="${item.id}">Supprimer</button>
+                <button
+                  class="item-check-btn ${item.is_checked ? "checked" : ""}"
+                  data-checklist-toggle="${item.id}"
+                  type="button"
+                >
+                  ${item.is_checked ? "✓" : ""}
+                </button>
+                <button class="small-pill-btn" data-checklist-edit="${item.id}" type="button">Modifier</button>
+                <button class="small-pill-btn" data-checklist-delete="${item.id}" type="button">Supprimer</button>
               </div>
             </div>
           `
@@ -532,7 +718,9 @@ function renderChecklistItems() {
 }
 
 async function createChecklist(title) {
-  const activeCount = listState.checklists.filter((l) => l.status === "active").length;
+  if (!title) return;
+
+  const activeCount = listState.checklists.filter((list) => list.status === "active").length;
   if (activeCount >= 3) {
     alert("Maximum 3 check-lists actives.");
     return;
@@ -557,8 +745,10 @@ async function addChecklistItem(label) {
     return;
   }
 
+  if (!label) return;
+
   const maxPosition = listState.checklistItems.length
-    ? Math.max(...listState.checklistItems.map((i) => i.position))
+    ? Math.max(...listState.checklistItems.map((item) => item.position))
     : 0;
 
   const { error } = await listsDb.from("checklist_items").insert({
@@ -590,18 +780,9 @@ async function toggleChecklistItem(id, checked) {
 }
 
 async function deleteChecklistItem(id) {
-  const { error } = await listsDb.from("checklist_items").delete().eq("id", id);
-  if (error) {
-    console.error(error);
-    return;
-  }
-  await loadChecklistItems();
-}
-
-async function archiveChecklist(id) {
   const { error } = await listsDb
-    .from("checklists")
-    .update({ status: "archived" })
+    .from("checklist_items")
+    .delete()
     .eq("id", id);
 
   if (error) {
@@ -609,39 +790,52 @@ async function archiveChecklist(id) {
     return;
   }
 
-  await loadChecklists();
+  await loadChecklistItems();
 }
 
-function formatUnit(unit) {
-  if (!unit) return "";
-  if (unit === "piece") return "pc";
-  return unit;
-}
+async function editChecklistItem(id) {
+  const item = listState.checklistItems.find((currentItem) => currentItem.id === id);
+  if (!item) return;
 
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  const newLabel = window.prompt("Élément", item.label);
+  if (newLabel === null) return;
+
+  const { error } = await listsDb
+    .from("checklist_items")
+    .update({ label: newLabel.trim() })
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  await loadChecklistItems();
 }
 
 async function persistShoppingOrder() {
-  const items = [...listEls.shoppingItemsContainer.querySelectorAll("[data-shopping-item-id]")];
-  for (let i = 0; i < items.length; i += 1) {
-    const id = items[i].dataset.shoppingItemId;
-    await listsDb.from("shopping_items").update({ position: i + 1 }).eq("id", id);
+  const items = [
+    ...listEls.shoppingItemsContainer.querySelectorAll("[data-shopping-item-id]"),
+  ];
+
+  for (let index = 0; index < items.length; index += 1) {
+    const id = items[index].dataset.shoppingItemId;
+    await listsDb.from("shopping_items").update({ position: index + 1 }).eq("id", id);
   }
+
   await loadShoppingItems();
 }
 
 async function persistChecklistOrder() {
-  const items = [...listEls.checklistItemsContainer.querySelectorAll("[data-checklist-item-id]")];
-  for (let i = 0; i < items.length; i += 1) {
-    const id = items[i].dataset.checklistItemId;
-    await listsDb.from("checklist_items").update({ position: i + 1 }).eq("id", id);
+  const items = [
+    ...listEls.checklistItemsContainer.querySelectorAll("[data-checklist-item-id]"),
+  ];
+
+  for (let index = 0; index < items.length; index += 1) {
+    const id = items[index].dataset.checklistItemId;
+    await listsDb.from("checklist_items").update({ position: index + 1 }).eq("id", id);
   }
+
   await loadChecklistItems();
 }
 
@@ -691,30 +885,38 @@ function initListModeEvents() {
     listEls.shoppingListModal.classList.add("hidden");
   });
 
+  listEls.deleteShoppingListBtn.addEventListener("click", async () => {
+    if (!listState.activeShoppingListId) {
+      alert("Aucune liste active à supprimer.");
+      return;
+    }
+
+    await deleteShoppingList(listState.activeShoppingListId);
+  });
+
+  listEls.shoppingPresetForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const newCategory = listEls.shoppingPresetNewCategory.value.trim();
+    const existingCategory = listEls.shoppingPresetExistingCategory.value;
+    const category = newCategory || existingCategory;
+
+    await addShoppingPresetItem({
+      category,
+      label: listEls.shoppingPresetLabel.value.trim(),
+      quantity_value: listEls.shoppingPresetQuantityValue.value
+        ? Number(listEls.shoppingPresetQuantityValue.value)
+        : null,
+      quantity_unit: listEls.shoppingPresetQuantityUnit.value,
+    });
+
+    listEls.shoppingPresetForm.reset();
+    listEls.shoppingPresetQuantityUnit.value = "piece";
+  });
+
   listEls.createChecklistBtn.addEventListener("click", () => {
     listEls.checklistModal.classList.remove("hidden");
   });
-
-listEls.shoppingPresetForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  const newCategory = listEls.shoppingPresetNewCategory.value.trim();
-  const existingCategory = listEls.shoppingPresetExistingCategory.value;
-  const category = newCategory || existingCategory;
-
-  await addShoppingPresetItem({
-    category,
-    label: listEls.shoppingPresetLabel.value.trim(),
-    quantity_value: listEls.shoppingPresetQuantityValue.value
-      ? Number(listEls.shoppingPresetQuantityValue.value)
-      : null,
-    quantity_unit: listEls.shoppingPresetQuantityUnit.value,
-  });
-
-  listEls.shoppingPresetForm.reset();
-  listEls.shoppingPresetQuantityUnit.value = "piece";
-});
-  
 
   listEls.closeChecklistModalBtn.addEventListener("click", () => {
     listEls.checklistModal.classList.add("hidden");
@@ -730,23 +932,16 @@ listEls.shoppingPresetForm.addEventListener("submit", async (event) => {
   listEls.shoppingListsTabs.addEventListener("click", async (event) => {
     const btn = event.target.closest("[data-shopping-list-id]");
     if (!btn) return;
+
     listState.activeShoppingListId = btn.dataset.shoppingListId;
     renderShoppingTabs();
     await loadShoppingItems();
   });
 
-  listEls.deleteShoppingListBtn.addEventListener("click", async () => {
-  if (!listState.activeShoppingListId) {
-    alert("Aucune liste active à supprimer.");
-    return;
-  }
-
-  await deleteShoppingList(listState.activeShoppingListId);
-});
-
   listEls.checklistTabs.addEventListener("click", async (event) => {
     const btn = event.target.closest("[data-checklist-id]");
     if (!btn) return;
+
     listState.activeChecklistId = btn.dataset.checklistId;
     renderChecklistTabs();
     await loadChecklistItems();
@@ -755,19 +950,32 @@ listEls.shoppingPresetForm.addEventListener("submit", async (event) => {
   listEls.shoppingPresetCategories.addEventListener("click", (event) => {
     const btn = event.target.closest("[data-preset-category]");
     if (!btn) return;
+
     listState.activePresetCategory = btn.dataset.presetCategory;
-    renderPresetCategoryItems();
+    renderPresetCategories();
   });
 
   document.addEventListener("click", async (event) => {
+    const savePresetBtn = event.target.closest("[data-save-preset-item]");
+    if (savePresetBtn) {
+      await saveShoppingPresetItem(savePresetBtn.dataset.savePresetItem);
+      return;
+    }
+
+    const deletePresetBtn = event.target.closest("[data-delete-preset-item]");
+    if (deletePresetBtn) {
+      await deleteShoppingPresetItem(deletePresetBtn.dataset.deletePresetItem);
+      return;
+    }
+
     const addPresetBtn = event.target.closest("[data-add-preset-item]");
     if (addPresetBtn) {
       const presetId = addPresetBtn.dataset.addPresetItem;
-      const preset = listState.shoppingPresets.find((p) => p.id === presetId);
+      const preset = listState.shoppingPresets.find((item) => item.id === presetId);
       if (!preset) return;
 
-      const valueInput = document.querySelector(`[data-preset-value="${presetId}"]`);
-      const unitInput = document.querySelector(`[data-preset-unit="${presetId}"]`);
+      const valueInput = document.querySelector(`[data-preset-edit-value="${presetId}"]`);
+      const unitInput = document.querySelector(`[data-preset-edit-unit="${presetId}"]`);
 
       await addShoppingItem({
         label: preset.label,
@@ -780,11 +988,15 @@ listEls.shoppingPresetForm.addEventListener("submit", async (event) => {
 
   listEls.shoppingItemForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+
     await addShoppingItem({
       label: listEls.shoppingItemLabel.value.trim(),
-      quantity_value: listEls.shoppingItemQuantityValue.value ? Number(listEls.shoppingItemQuantityValue.value) : null,
+      quantity_value: listEls.shoppingItemQuantityValue.value
+        ? Number(listEls.shoppingItemQuantityValue.value)
+        : null,
       quantity_unit: listEls.shoppingItemQuantityUnit.value,
     });
+
     listEls.shoppingItemForm.reset();
     listEls.shoppingItemQuantityUnit.value = "piece";
   });
@@ -802,39 +1014,20 @@ listEls.shoppingPresetForm.addEventListener("submit", async (event) => {
     const toggleBtn = event.target.closest("[data-shopping-toggle]");
     if (toggleBtn) {
       const id = toggleBtn.dataset.shoppingToggle;
-      const item = listState.shoppingItems.find((i) => i.id === id);
+      const item = listState.shoppingItems.find((currentItem) => currentItem.id === id);
       if (item) await toggleShoppingItem(id, item.is_checked);
       return;
     }
 
     const deleteBtn = event.target.closest("[data-shopping-delete]");
     if (deleteBtn) {
-      await deleteShoppingItem(deleteBtn.dataset.shoppingDelete);
+      await softDeleteShoppingItem(deleteBtn.dataset.shoppingDelete);
       return;
     }
 
     const editBtn = event.target.closest("[data-shopping-edit]");
     if (editBtn) {
-      const id = editBtn.dataset.shoppingEdit;
-      const item = listState.shoppingItems.find((i) => i.id === id);
-      if (!item) return;
-
-      const newLabel = window.prompt("Article", item.label);
-      if (newLabel === null) return;
-
-      const newValue = window.prompt("Quantité", item.quantity_value ?? "");
-      const newUnit = window.prompt("Unité (piece/kg/g/l/ml)", item.quantity_unit ?? "piece");
-
-      await listsDb
-        .from("shopping_items")
-        .update({
-          label: newLabel.trim(),
-          quantity_value: newValue ? Number(newValue) : null,
-          quantity_unit: newUnit || "piece",
-        })
-        .eq("id", id);
-
-      await loadShoppingItems();
+      await editShoppingItem(editBtn.dataset.shoppingEdit);
     }
   });
 
@@ -842,7 +1035,7 @@ listEls.shoppingPresetForm.addEventListener("submit", async (event) => {
     const toggleBtn = event.target.closest("[data-checklist-toggle]");
     if (toggleBtn) {
       const id = toggleBtn.dataset.checklistToggle;
-      const item = listState.checklistItems.find((i) => i.id === id);
+      const item = listState.checklistItems.find((currentItem) => currentItem.id === id);
       if (item) await toggleChecklistItem(id, item.is_checked);
       return;
     }
@@ -855,24 +1048,21 @@ listEls.shoppingPresetForm.addEventListener("submit", async (event) => {
 
     const editBtn = event.target.closest("[data-checklist-edit]");
     if (editBtn) {
-      const id = editBtn.dataset.checklistEdit;
-      const item = listState.checklistItems.find((i) => i.id === id);
-      if (!item) return;
-
-      const newLabel = window.prompt("Élément", item.label);
-      if (newLabel === null) return;
-
-      await listsDb
-        .from("checklist_items")
-        .update({ label: newLabel.trim() })
-        .eq("id", id);
-
-      await loadChecklistItems();
+      await editChecklistItem(editBtn.dataset.checklistEdit);
     }
   });
 
-  enableSimpleDrag(listEls.shoppingItemsContainer, persistShoppingOrder, "[data-shopping-item-id]");
-  enableSimpleDrag(listEls.checklistItemsContainer, persistChecklistOrder, "[data-checklist-item-id]");
+  enableSimpleDrag(
+    listEls.shoppingItemsContainer,
+    persistShoppingOrder,
+    "[data-shopping-item-id]"
+  );
+
+  enableSimpleDrag(
+    listEls.checklistItemsContainer,
+    persistChecklistOrder,
+    "[data-checklist-item-id]"
+  );
 }
 
 async function initListsModule() {
