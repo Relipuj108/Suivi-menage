@@ -1197,21 +1197,24 @@ select:focus {
 
 .shopping-preset-form {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 110px 110px 180px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.5fr) minmax(0, 1.2fr) 110px 110px minmax(160px, 180px);
   gap: 10px;
   margin-bottom: 14px;
+  align-items: stretch;
 }
 
-.section-title-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.shopping-preset-form > * {
+  min-width: 0;
 }
 
-.danger-soft-btn {
-  color: #b84f4f;
-  background: rgba(225, 99, 99, 0.12);
-  border: 1px solid rgba(225, 99, 99, 0.18);
+.shopping-preset-form .primary-btn {
+  width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .shopping-preset-form {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
 }
 
 @media (max-width: 900px) {
@@ -1225,5 +1228,3 @@ select:focus {
     grid-template-columns: 1fr;
   }
 }
-
-
