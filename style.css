@@ -1123,10 +1123,15 @@ select:focus {
 }
 
 .preset-item select[data-preset-edit-category] {
-  grid-area: category;
+  width: auto;
   min-width: 0;
+  max-width: 220px;
+  justify-self: start;
 }
 
+.preset-item .item-side-actions {
+  justify-self: end;
+}
 .preset-item .item-side-actions {
   grid-area: actions;
   display: flex;
