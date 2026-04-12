@@ -317,11 +317,11 @@ function renderPresetCategoryItems() {
                   .join("")}
               </select>
 
-              <div class="item-side-actions">
-                <button class="small-pill-btn" type="button" data-save-preset-item="${item.id}">Enregistrer</button>
-                <button class="small-pill-btn" type="button" data-delete-preset-item="${item.id}">Supprimer</button>
-                <button class="primary-btn" type="button" data-add-preset-item="${item.id}">Ajouter</button>
-              </div>
+             <div class="item-side-actions">
+            <button class="small-pill-btn" type="button" data-save-preset-item="${item.id}">Save</button>
+            <button class="small-pill-btn" type="button" data-delete-preset-item="${item.id}">Suppr.</button>
+            <button class="primary-btn preset-add-btn" type="button" data-add-preset-item="${item.id}">Add</button>
+          </div>
             </div>
           `
         )
