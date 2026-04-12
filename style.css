@@ -1032,7 +1032,7 @@ select:focus {
 
 .sortable-item {
   display: grid;
-  grid-template-columns: 42px 1fr auto auto;
+  grid-template-columns: 42px 1fr auto;
   align-items: center;
   gap: 10px;
   padding: 12px;
@@ -1040,6 +1040,34 @@ select:focus {
   background: rgba(255,255,255,0.8);
   border: 1px solid rgba(182, 194, 219, 0.28);
   box-shadow: 0 10px 22px rgba(94, 117, 154, 0.08);
+}
+.section-title-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.danger-soft-btn {
+  color: #b84f4f;
+  background: rgba(225, 99, 99, 0.12);
+  border: 1px solid rgba(225, 99, 99, 0.18);
+}
+
+.shopping-preset-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+  align-items: stretch;
+}
+
+.shopping-preset-form > * {
+  min-width: 0;
+  width: 100%;
+}
+
+.shopping-preset-form .primary-btn {
+  width: 100%;
 }
 
 .sort-handle {
@@ -1163,11 +1191,43 @@ select:focus {
   }
 
   .sortable-item {
-    grid-template-columns: 42px 1fr;
+    grid-template-columns: 34px 1fr auto;
+    gap: 8px;
+    padding: 10px;
+    align-items: center;
+  }
+
+  .sort-handle {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+  }
+
+  .item-check-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .sortable-title {
+    font-size: 15px;
+  }
+
+  .sortable-meta {
+    font-size: 12px;
+    margin-top: 2px;
   }
 
   .item-side-actions {
-    grid-column: 1 / -1;
+    display: flex;
+    gap: 4px;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .small-pill-btn {
+    min-height: 30px;
+    padding: 0 8px;
+    font-size: 11px;
   }
 
   .mode-switch {
@@ -1191,6 +1251,7 @@ select:focus {
 .shopping-preset-form .primary-btn {
   width: 100%;
 }
+
 
 @media (max-width: 900px) {
   .shopping-preset-form {
