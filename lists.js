@@ -38,6 +38,15 @@ const listEls = {
   shoppingListForm: document.getElementById("shoppingListForm"),
   shoppingListTitle: document.getElementById("shoppingListTitle"),
 
+  deleteShoppingListBtn: document.getElementById("deleteShoppingListBtn"),
+
+  shoppingPresetForm: document.getElementById("shoppingPresetForm"),
+  shoppingPresetNewCategory: document.getElementById("shoppingPresetNewCategory"),
+  shoppingPresetExistingCategory: document.getElementById("shoppingPresetExistingCategory"),
+  shoppingPresetLabel: document.getElementById("shoppingPresetLabel"),
+  shoppingPresetQuantityValue: document.getElementById("shoppingPresetQuantityValue"),
+  shoppingPresetQuantityUnit: document.getElementById("shoppingPresetQuantityUnit"),
+
   createChecklistBtn: document.getElementById("createChecklistBtn"),
   checklistTabs: document.getElementById("checklistTabs"),
   checklistItemForm: document.getElementById("checklistItemForm"),
@@ -141,6 +150,7 @@ function renderShoppingTabs() {
     : `<div class="empty-state">Aucune liste active.</div>`;
 
   listEls.createShoppingListBtn.disabled = activeLists.length >= 3;
+  listEls.deleteShoppingListBtn.disabled = !listState.activeShoppingListId;
 }
 
 function renderShoppingArchivedLists() {
@@ -161,12 +171,21 @@ function renderShoppingArchivedLists() {
 }
 
 function renderPresetCategories() {
-  const categories = [...new Set(listState.shoppingPresets.map((p) => p.category))];
+  const categories = [...new Set(listState.shoppingPresets.map((p) => p.category))].sort();
+
+  listEls.shoppingPresetExistingCategory.innerHTML =
+    `<option value="">Choisir une catégorie existante</option>` +
+    categories
+      .map(
+        (category) =>
+          `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`
+      )
+      .join("");
 
   listEls.shoppingPresetCategories.innerHTML = categories
     .map(
       (category) => `
-        <button class="preset-category-btn" data-preset-category="${escapeHtml(category)}">
+        <button class="preset-category-btn ${listState.activePresetCategory === category ? "active" : ""}" data-preset-category="${escapeHtml(category)}">
           ${escapeHtml(category)}
         </button>
       `
@@ -178,6 +197,65 @@ function renderPresetCategories() {
   }
 
   renderPresetCategoryItems();
+}
+
+async function addShoppingPresetItem({
+  category,
+  label,
+  quantity_value,
+  quantity_unit,
+}) {
+  if (!category || !label) {
+    alert("Choisis ou crée une catégorie, puis renseigne un article.");
+    return;
+  }
+
+  const existingInCategory = listState.shoppingPresets.filter(
+    (item) => item.category === category
+  );
+
+  const maxPosition = existingInCategory.length
+    ? Math.max(...existingInCategory.map((item) => item.position))
+    : 0;
+
+  const { error } = await listsDb.from("shopping_presets").insert({
+    category,
+    label,
+    quantity_value,
+    quantity_unit,
+    position: maxPosition + 1,
+  });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  listState.activePresetCategory = category;
+  await loadShoppingPresets();
+}
+
+async function deleteShoppingList(id) {
+  const list = listState.shoppingLists.find((l) => l.id === id);
+  if (!list) return;
+
+  const confirmed = window.confirm(
+    `Supprimer complètement la liste "${list.title}" ?\n\nCette action supprimera aussi tous ses articles.`
+  );
+
+  if (!confirmed) return;
+
+  const { error } = await listsDb
+    .from("shopping_lists")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  await loadShoppingLists();
 }
 
 function renderPresetCategoryItems() {
@@ -617,6 +695,27 @@ function initListModeEvents() {
     listEls.checklistModal.classList.remove("hidden");
   });
 
+listEls.shoppingPresetForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const newCategory = listEls.shoppingPresetNewCategory.value.trim();
+  const existingCategory = listEls.shoppingPresetExistingCategory.value;
+  const category = newCategory || existingCategory;
+
+  await addShoppingPresetItem({
+    category,
+    label: listEls.shoppingPresetLabel.value.trim(),
+    quantity_value: listEls.shoppingPresetQuantityValue.value
+      ? Number(listEls.shoppingPresetQuantityValue.value)
+      : null,
+    quantity_unit: listEls.shoppingPresetQuantityUnit.value,
+  });
+
+  listEls.shoppingPresetForm.reset();
+  listEls.shoppingPresetQuantityUnit.value = "piece";
+});
+  
+
   listEls.closeChecklistModalBtn.addEventListener("click", () => {
     listEls.checklistModal.classList.add("hidden");
   });
@@ -635,6 +734,15 @@ function initListModeEvents() {
     renderShoppingTabs();
     await loadShoppingItems();
   });
+
+  listEls.deleteShoppingListBtn.addEventListener("click", async () => {
+  if (!listState.activeShoppingListId) {
+    alert("Aucune liste active à supprimer.");
+    return;
+  }
+
+  await deleteShoppingList(listState.activeShoppingListId);
+});
 
   listEls.checklistTabs.addEventListener("click", async (event) => {
     const btn = event.target.closest("[data-checklist-id]");
