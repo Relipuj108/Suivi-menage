@@ -215,7 +215,11 @@
         <h2>Liste de courses</h2>
         <p class="section-subtitle">3 listes actives maximum. Historique conservé.</p>
       </div>
-      <button id="createShoppingListBtn" class="primary-btn" type="button">Nouvelle liste</button>
+
+      <div class="section-title-actions">
+        <button id="createShoppingListBtn" class="primary-btn" type="button">Nouvelle liste</button>
+        <button id="deleteShoppingListBtn" class="secondary-btn danger-soft-btn" type="button">Supprimer la liste</button>
+      </div>
     </div>
 
     <div id="shoppingListsTabs" class="list-tabs"></div>
@@ -261,9 +265,40 @@
       <h2>Catégories prédéfinies</h2>
     </div>
 
-    <form id="shoppingPresetCategoryForm" class="shopping-inline-form shopping-category-form">
-      <input id="shoppingPresetCategoryName" type="text" placeholder="Nouvelle catégorie (ex : Boissons)" required />
-      <button class="primary-btn" type="submit">Ajouter la catégorie</button>
+    <form id="shoppingPresetForm" class="shopping-preset-form">
+      <input
+        id="shoppingPresetNewCategory"
+        type="text"
+        placeholder="Nouvelle catégorie (optionnel)"
+      />
+
+      <select id="shoppingPresetExistingCategory">
+        <option value="">Choisir une catégorie existante</option>
+      </select>
+
+      <input
+        id="shoppingPresetLabel"
+        type="text"
+        placeholder="Article prédéfini"
+        required
+      />
+
+      <input
+        id="shoppingPresetQuantityValue"
+        type="number"
+        step="0.01"
+        placeholder="Qté"
+      />
+
+      <select id="shoppingPresetQuantityUnit">
+        <option value="piece">Nombre</option>
+        <option value="kg">kg</option>
+        <option value="g">g</option>
+        <option value="l">L</option>
+        <option value="ml">ml</option>
+      </select>
+
+      <button class="primary-btn" type="submit">Ajouter au prédéfini</button>
     </form>
 
     <div id="shoppingPresetCategories" class="preset-categories"></div>
