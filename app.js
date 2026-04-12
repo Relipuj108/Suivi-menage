@@ -350,35 +350,46 @@ function getFilteredTasks() {
   const statusFilter = els.statusFilter.value;
   const rangeDates = getRangeDates();
   const dateSet = new Set(rangeDates);
+  const today = todayString();
 
   return state.tasks
     .filter((task) => {
-      if (statusFilter === "inactive") {
-        if (task.status !== "inactive") return false;
-      } else {
-        if (!dateSet.has(task.due_date)) return false;
-
-        if (statusFilter !== "all" && task.status !== statusFilter) {
-          return false;
-        }
-
-        if (statusFilter === "all" && task.status === "inactive") {
-          return false;
-        }
-      }
-
       if (state.currentPerson !== "all" && task.assignee !== state.currentPerson) {
         return false;
       }
 
-      return true;
+      if (statusFilter === "inactive") {
+        return task.status === "inactive";
+      }
+
+      if (statusFilter !== "all" && task.status !== statusFilter) {
+        return false;
+      }
+
+      if (statusFilter === "all" && task.status === "inactive") {
+        return false;
+      }
+
+      if (task.status !== "pending") {
+        return dateSet.has(task.due_date);
+      }
+
+      if (task.due_date < today) {
+        return true;
+      }
+
+      return dateSet.has(task.due_date);
     })
     .sort((a, b) => {
-      if (a.due_date !== b.due_date) return a.due_date.localeCompare(b.due_date);
       if (a.status !== b.status) {
         const order = { pending: 0, done: 1, inactive: 2 };
         return order[a.status] - order[b.status];
       }
+
+      if (a.due_date !== b.due_date) {
+        return a.due_date.localeCompare(b.due_date);
+      }
+
       return (a.title || "").localeCompare(b.title || "", "fr");
     });
 }
