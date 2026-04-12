@@ -496,44 +496,6 @@ function renderAgenda() {
   els.agendaContainer.innerHTML =
     html || `<div class="empty-state">Aucune tâche sur cette période.</div>`;
 }
-  const overdueTasks = filtered.filter((task) => isOverdue(task));
-  const regularTasks = filtered.filter((task) => !isOverdue(task));
-  const rangeDates = getRangeDates();
-
-  let html = "";
-
-  if (overdueTasks.length) {
-    html += `
-      <div class="day-group">
-        <div class="day-header overdue-header">
-          <p class="day-header-title">En retard</p>
-          <p class="day-header-subtitle">${overdueTasks.length} tâche(s)</p>
-        </div>
-        ${overdueTasks.map(renderTaskCard).join("")}
-      </div>
-    `;
-  }
-
-  html += rangeDates
-    .map((date) => {
-      const dayTasks = regularTasks.filter((task) => task.due_date === date);
-      if (!dayTasks.length) return "";
-
-      return `
-        <div class="day-group">
-          <div class="day-header">
-            <p class="day-header-title">${escapeHtml(formatDateLabel(date))}</p>
-            <p class="day-header-subtitle">${dayTasks.length} tâche(s)</p>
-          </div>
-
-          ${dayTasks.map(renderTaskCard).join("")}
-        </div>
-      `;
-    })
-    .join("");
-
-  els.agendaContainer.innerHTML = html || `<div class="empty-state">Aucune tâche sur cette période.</div>`;
-}
 
 function renderTaskCard(task) {
   const personClass = getPersonClass(task.assignee);
