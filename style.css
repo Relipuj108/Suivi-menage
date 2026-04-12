@@ -1194,3 +1194,17 @@ select:focus {
     grid-template-columns: 1fr;
   }
 }
+
+.shopping-category-form {
+  grid-template-columns: minmax(0, 1fr) 180px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 760px) {
+  .shopping-category-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
