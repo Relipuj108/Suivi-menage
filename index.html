@@ -19,175 +19,305 @@
       <button id="refreshBtn" class="icon-btn" type="button" aria-label="Rafraîchir">↻</button>
     </header>
 
-    <section class="summary-strip">
-      <button class="summary-card mathieu" type="button" data-summary-person="Mathieu">
-        <span class="summary-name">Mathieu</span>
-        <span class="summary-count" id="summaryMathieu">0</span>
-        <span class="summary-text" id="summaryMathieuText">0 dans les 5 prochains jours</span>
-        <span class="summary-overdue" id="summaryMathieuOverdue">0 en retard</span>
+    <section class="mode-switch">
+      <button class="mode-card active" data-mode="menage" type="button">
+        <span class="mode-emoji">🧹</span>
+        <span class="mode-label">Ménage</span>
       </button>
 
-      <button class="summary-card sarah" type="button" data-summary-person="Sarah">
-        <span class="summary-name">Sarah</span>
-        <span class="summary-count" id="summarySarah">0</span>
-        <span class="summary-text" id="summarySarahText">0 dans les 5 prochains jours</span>
-        <span class="summary-overdue" id="summarySarahOverdue">0 en retard</span>
+      <button class="mode-card" data-mode="courses" type="button">
+        <span class="mode-emoji">🛒</span>
+        <span class="mode-label">Courses</span>
       </button>
 
-      <button class="summary-card all neutral" type="button" data-summary-person="all">
-        <span class="summary-name">Tous</span>
-        <span class="summary-count" id="summaryAll">0</span>
-        <span class="summary-text" id="summaryAllText">0 dans les 5 prochains jours</span>
-        <span class="summary-overdue" id="summaryAllOverdue">0 en retard</span>
+      <button class="mode-card" data-mode="checklists" type="button">
+        <span class="mode-emoji">✅</span>
+        <span class="mode-label">Check-lists</span>
       </button>
     </section>
 
-    <nav class="person-switch">
-      <button class="person-tab neutral active" data-person="all">Tous</button>
-      <button class="person-tab mathieu-tab" data-person="Mathieu">Mathieu</button>
-      <button class="person-tab sarah-tab" data-person="Sarah">Sarah</button>
-    </nav>
+    <div id="modeMenage">
+      <section class="summary-strip">
+        <button class="summary-card mathieu" type="button" data-summary-person="Mathieu">
+          <span class="summary-name">Mathieu</span>
+          <span class="summary-count" id="summaryMathieu">0</span>
+          <span class="summary-text" id="summaryMathieuText">0 dans les 5 prochains jours</span>
+          <span class="summary-overdue" id="summaryMathieuOverdue">0 en retard</span>
+        </button>
 
-<section class="task-panel-toolbar-mini">
-  <div class="task-panel-toolbar-mini-row">
-    <span class="task-panel-toolbar-mini-label">Nouvelle tâche</span>
+        <button class="summary-card sarah" type="button" data-summary-person="Sarah">
+          <span class="summary-name">Sarah</span>
+          <span class="summary-count" id="summarySarah">0</span>
+          <span class="summary-text" id="summarySarahText">0 dans les 5 prochains jours</span>
+          <span class="summary-overdue" id="summarySarahOverdue">0 en retard</span>
+        </button>
 
-    <div class="task-panel-toolbar-mini-actions">
-      <button id="showTaskPanelBtn" class="mini-btn" type="button">Afficher</button>
-      <button id="hideTaskPanelBtn" class="mini-btn" type="button">Cacher</button>
-      <button id="hideTaskPanelDefaultBtn" class="mini-btn" type="button">Cacher par défaut</button>
-      <button id="showTaskPanelDefaultBtn" class="mini-btn" type="button">Afficher par défaut</button>
-    </div>
-  </div>
-</section>
+        <button class="summary-card all neutral" type="button" data-summary-person="all">
+          <span class="summary-name">Tous</span>
+          <span class="summary-count" id="summaryAll">0</span>
+          <span class="summary-text" id="summaryAllText">0 dans les 5 prochains jours</span>
+          <span class="summary-overdue" id="summaryAllOverdue">0 en retard</span>
+        </button>
+      </section>
 
-    <section id="taskFormPanel" class="panel form-panel">
-      <div class="section-title-row">
-        <h2>Nouvelle tâche</h2>
-      </div>
+      <nav class="person-switch">
+        <button class="person-tab neutral active" data-person="all">Tous</button>
+        <button class="person-tab mathieu-tab" data-person="Mathieu">Mathieu</button>
+        <button class="person-tab sarah-tab" data-person="Sarah">Sarah</button>
+      </nav>
 
-      <form id="taskForm" class="task-form">
-        <div class="field">
-          <label for="title">Tâche</label>
-          <input id="title" name="title" type="text" maxlength="120" placeholder="Ex : Passer l’aspirateur en haut" required />
-        </div>
+      <section class="task-panel-toolbar-mini">
+        <div class="task-panel-toolbar-mini-row">
+          <span class="task-panel-toolbar-mini-label">Nouvelle tâche</span>
 
-        <div class="grid-2">
-          <div class="field">
-            <label>Assigné à</label>
-           <div class="assignee-toggle assignee-toggle-3" id="assigneeToggle">
-            <button type="button" class="assignee-btn all-people" data-assignee="Tout le monde">
-              <span class="assignee-dot"></span>
-              <span>Tout le monde</span>
-            </button>
-          
-            <button type="button" class="assignee-btn mathieu active" data-assignee="Mathieu">
-              <span class="assignee-dot"></span>
-              <span>Mathieu</span>
-            </button>
-          
-            <button type="button" class="assignee-btn sarah" data-assignee="Sarah">
-              <span class="assignee-dot"></span>
-              <span>Sarah</span>
-            </button>
-          </div>
-          <input id="assignee" name="assignee" type="hidden" value="Mathieu" />
-          </div>
-
-          <div class="field">
-            <label for="dueDate">Date prévue</label>
-            <input id="dueDate" name="dueDate" type="date" required />
+          <div class="task-panel-toolbar-mini-actions">
+            <button id="showTaskPanelBtn" class="mini-btn" type="button">Afficher</button>
+            <button id="hideTaskPanelBtn" class="mini-btn" type="button">Cacher</button>
+            <button id="hideTaskPanelDefaultBtn" class="mini-btn" type="button">Cacher par défaut</button>
+            <button id="showTaskPanelDefaultBtn" class="mini-btn" type="button">Afficher par défaut</button>
           </div>
         </div>
+      </section>
 
-        <div class="grid-2">
-          <div class="field">
-            <label class="checkbox-row">
-              <input id="isUniqueTask" type="checkbox" />
-              <span>Tâche unique (pas de récurrence)</span>
-            </label>
-          </div>
-
-          <div class="field">
-            <label class="checkbox-row checkbox-row-alt">
-              <input id="alternateAssignee" type="checkbox" />
-              <span>Alterner l’assignation</span>
-            </label>
-          </div>
+      <section id="taskFormPanel" class="panel form-panel">
+        <div class="section-title-row">
+          <h2>Nouvelle tâche</h2>
         </div>
 
-        <div class="field">
-          <label for="repeatDays">Répétition (jours)</label>
+        <form id="taskForm" class="task-form">
+          <div class="field">
+            <label for="title">Tâche</label>
+            <input id="title" name="title" type="text" maxlength="120" placeholder="Ex : Passer l’aspirateur en haut" required />
+          </div>
 
-          <div class="repeat-picker">
-            <div class="repeat-quick" id="repeatQuickButtons">
-              <button type="button" class="repeat-mini-btn" data-repeat="1">1</button>
-              <button type="button" class="repeat-mini-btn" data-repeat="2">2</button>
-              <button type="button" class="repeat-mini-btn" data-repeat="3">3</button>
-              <button type="button" class="repeat-mini-btn" data-repeat="4">4</button>
-              <button type="button" class="repeat-mini-btn" data-repeat="5">5</button>
-              <button type="button" class="repeat-mini-btn" data-repeat="6">6</button>
-              <button type="button" class="repeat-mini-btn" data-repeat="7">7</button>
-              <button type="button" class="repeat-mini-btn" data-repeat="8">8</button>
-              <button type="button" class="repeat-mini-btn" data-repeat="9">9</button>
-              <button type="button" class="repeat-mini-btn" data-repeat="10">10</button>
+          <div class="grid-2">
+            <div class="field">
+              <label>Assigné à</label>
+              <div class="assignee-toggle assignee-toggle-3" id="assigneeToggle">
+                <button type="button" class="assignee-btn all-people" data-assignee="Tout le monde">
+                  <span class="assignee-dot"></span>
+                  <span>Tout le monde</span>
+                </button>
+
+                <button type="button" class="assignee-btn mathieu active" data-assignee="Mathieu">
+                  <span class="assignee-dot"></span>
+                  <span>Mathieu</span>
+                </button>
+
+                <button type="button" class="assignee-btn sarah" data-assignee="Sarah">
+                  <span class="assignee-dot"></span>
+                  <span>Sarah</span>
+                </button>
+              </div>
+              <input id="assignee" name="assignee" type="hidden" value="Mathieu" />
             </div>
 
-            <input id="repeatDays" name="repeatDays" type="number" min="0" step="1" value="0" />
+            <div class="field">
+              <label for="dueDate">Date prévue</label>
+              <input id="dueDate" name="dueDate" type="date" required />
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label class="checkbox-row">
+                <input id="isUniqueTask" type="checkbox" />
+                <span>Tâche unique (pas de récurrence)</span>
+              </label>
+            </div>
+
+            <div class="field">
+              <label class="checkbox-row checkbox-row-alt">
+                <input id="alternateAssignee" type="checkbox" />
+                <span>Alterner l’assignation</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="repeatDays">Répétition (jours)</label>
+
+            <div class="repeat-picker">
+              <div class="repeat-quick" id="repeatQuickButtons">
+                <button type="button" class="repeat-mini-btn" data-repeat="1">1</button>
+                <button type="button" class="repeat-mini-btn" data-repeat="2">2</button>
+                <button type="button" class="repeat-mini-btn" data-repeat="3">3</button>
+                <button type="button" class="repeat-mini-btn" data-repeat="4">4</button>
+                <button type="button" class="repeat-mini-btn" data-repeat="5">5</button>
+                <button type="button" class="repeat-mini-btn" data-repeat="6">6</button>
+                <button type="button" class="repeat-mini-btn" data-repeat="7">7</button>
+                <button type="button" class="repeat-mini-btn" data-repeat="8">8</button>
+                <button type="button" class="repeat-mini-btn" data-repeat="9">9</button>
+                <button type="button" class="repeat-mini-btn" data-repeat="10">10</button>
+              </div>
+
+              <input id="repeatDays" name="repeatDays" type="number" min="0" step="1" value="0" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="notes">Note</label>
+            <input id="notes" name="notes" type="text" maxlength="200" placeholder="Optionnel" />
+          </div>
+
+          <button class="primary-btn full-btn" type="submit">Ajouter la tâche</button>
+        </form>
+      </section>
+
+      <section class="panel controls-panel">
+        <div class="section-title-row">
+          <h2>Vue</h2>
+          <button id="goTodayBtn" class="secondary-btn" type="button">Aujourd’hui</button>
+        </div>
+
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="day">Jour</button>
+          <button class="view-btn" data-view="week">Semaine</button>
+          <button class="view-btn" data-view="nextWeek">Semaine prochaine</button>
+        </div>
+
+        <div class="filters-grid">
+          <div class="field">
+            <label for="selectedDate">Jour sélectionné</label>
+            <input id="selectedDate" type="date" />
+          </div>
+
+          <div class="field">
+            <label for="statusFilter">Statut</label>
+            <select id="statusFilter">
+              <option value="pending">À faire</option>
+              <option value="all">Toutes</option>
+              <option value="done">Terminées</option>
+              <option value="inactive">Inactives</option>
+            </select>
           </div>
         </div>
+      </section>
 
-        <div class="field">
-          <label for="notes">Note</label>
-          <input id="notes" name="notes" type="text" maxlength="200" placeholder="Optionnel" />
+      <section class="panel agenda-panel">
+        <div class="section-title-row">
+          <div>
+            <h2 id="agendaTitle">Agenda</h2>
+            <p id="agendaSubtitle" class="section-subtitle"></p>
+          </div>
+          <span id="countBadge" class="count-badge">0</span>
         </div>
 
-        <button class="primary-btn full-btn" type="submit">Ajouter la tâche</button>
-      </form>
-    </section>
+        <div id="statusMessage" class="status-message"></div>
+        <div id="agendaContainer" class="agenda-container"></div>
+      </section>
+    </div>
 
-    <section class="panel controls-panel">
-      <div class="section-title-row">
-        <h2>Vue</h2>
-        <button id="goTodayBtn" class="secondary-btn" type="button">Aujourd’hui</button>
-      </div>
-
-      <div class="view-toggle">
-        <button class="view-btn active" data-view="day">Jour</button>
-        <button class="view-btn" data-view="week">Semaine</button>
-        <button class="view-btn" data-view="nextWeek">Semaine prochaine</button>
-      </div>
-
-      <div class="filters-grid">
-        <div class="field">
-          <label for="selectedDate">Jour sélectionné</label>
-          <input id="selectedDate" type="date" />
+    <div id="modeCourses" class="mode-section hidden-panel">
+      <section class="panel">
+        <div class="section-title-row">
+          <div>
+            <h2>Liste de courses</h2>
+            <p class="section-subtitle">3 listes actives maximum. Historique conservé.</p>
+          </div>
+          <button id="createShoppingListBtn" class="primary-btn" type="button">Nouvelle liste</button>
         </div>
 
-        <div class="field">
-          <label for="statusFilter">Statut</label>
-          <select id="statusFilter">
-            <option value="pending">À faire</option>
-            <option value="all">Toutes</option>
-            <option value="done">Terminées</option>
-            <option value="inactive">Inactives</option>
+        <div id="shoppingListsTabs" class="list-tabs"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title-row">
+          <h2>Catégories prédéfinies</h2>
+        </div>
+        <div id="shoppingPresetCategories" class="preset-categories"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title-row">
+          <h2>Ajouter un article</h2>
+        </div>
+
+        <form id="shoppingItemForm" class="shopping-inline-form">
+          <input id="shoppingItemLabel" type="text" placeholder="Article" required />
+          <input id="shoppingItemQuantityValue" type="number" step="0.01" placeholder="Qté" />
+          <select id="shoppingItemQuantityUnit">
+            <option value="piece">Nombre</option>
+            <option value="kg">kg</option>
+            <option value="g">g</option>
+            <option value="l">L</option>
+            <option value="ml">ml</option>
+          </select>
+          <button class="primary-btn" type="submit">Ajouter</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="section-title-row">
+          <div>
+            <h2>Articles</h2>
+            <p class="section-subtitle">Maintenir appuyé pour déplacer un article.</p>
+          </div>
+          <select id="shoppingFilter">
+            <option value="all">Afficher tout</option>
+            <option value="unchecked">Seulement non cochés</option>
+            <option value="checked">Seulement cochés</option>
           </select>
         </div>
-      </div>
-    </section>
 
-    <section class="panel agenda-panel">
-      <div class="section-title-row">
-        <div>
-          <h2 id="agendaTitle">Agenda</h2>
-          <p id="agendaSubtitle" class="section-subtitle"></p>
+        <div id="shoppingItemsContainer" class="sortable-list"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title-row">
+          <h2>Historique des listes</h2>
         </div>
-        <span id="countBadge" class="count-badge">0</span>
-      </div>
+        <div id="shoppingArchivedLists" class="history-list"></div>
+      </section>
+    </div>
 
-      <div id="statusMessage" class="status-message"></div>
-      <div id="agendaContainer" class="agenda-container"></div>
-    </section>
+    <div id="modeChecklists" class="mode-section hidden-panel">
+      <section class="panel">
+        <div class="section-title-row">
+          <div>
+            <h2>Check-lists</h2>
+            <p class="section-subtitle">3 check-lists actives maximum. Historique conservé.</p>
+          </div>
+          <button id="createChecklistBtn" class="primary-btn" type="button">Nouvelle check-list</button>
+        </div>
+
+        <div id="checklistTabs" class="list-tabs"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title-row">
+          <h2>Ajouter un élément</h2>
+        </div>
+
+        <form id="checklistItemForm" class="shopping-inline-form">
+          <input id="checklistItemLabel" type="text" placeholder="Nouvel élément" required />
+          <button class="primary-btn" type="submit">Ajouter</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="section-title-row">
+          <div>
+            <h2>Éléments</h2>
+            <p class="section-subtitle">Maintenir appuyé pour déplacer un élément.</p>
+          </div>
+          <select id="checklistFilter">
+            <option value="all">Afficher tout</option>
+            <option value="unchecked">Seulement non cochés</option>
+            <option value="checked">Seulement cochés</option>
+          </select>
+        </div>
+
+        <div id="checklistItemsContainer" class="sortable-list"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title-row">
+          <h2>Historique des check-lists</h2>
+        </div>
+        <div id="checklistArchivedLists" class="history-list"></div>
+      </section>
+    </div>
   </div>
 
   <div id="editModal" class="modal hidden">
@@ -209,23 +339,23 @@
         <div class="grid-2">
           <div class="field">
             <label>Assigné à</label>
-           <div class="assignee-toggle assignee-toggle-3" id="editAssigneeToggle">
-            <button type="button" class="assignee-btn all-people" data-assignee="Tout le monde">
-              <span class="assignee-dot"></span>
-              <span>Tout le monde</span>
-            </button>
-          
-            <button type="button" class="assignee-btn mathieu" data-assignee="Mathieu">
-              <span class="assignee-dot"></span>
-              <span>Mathieu</span>
-            </button>
-          
-            <button type="button" class="assignee-btn sarah" data-assignee="Sarah">
-              <span class="assignee-dot"></span>
-              <span>Sarah</span>
-            </button>
-          </div>
-          <input id="editAssignee" type="hidden" value="Mathieu" />
+            <div class="assignee-toggle assignee-toggle-3" id="editAssigneeToggle">
+              <button type="button" class="assignee-btn all-people" data-assignee="Tout le monde">
+                <span class="assignee-dot"></span>
+                <span>Tout le monde</span>
+              </button>
+
+              <button type="button" class="assignee-btn mathieu" data-assignee="Mathieu">
+                <span class="assignee-dot"></span>
+                <span>Mathieu</span>
+              </button>
+
+              <button type="button" class="assignee-btn sarah" data-assignee="Sarah">
+                <span class="assignee-dot"></span>
+                <span>Sarah</span>
+              </button>
+            </div>
+            <input id="editAssignee" type="hidden" value="Mathieu" />
           </div>
 
           <div class="field">
@@ -316,7 +446,42 @@
     </div>
   </div>
 
+  <div id="shoppingListModal" class="modal hidden">
+    <div class="modal-backdrop" data-close-shopping-modal="true"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Nouvelle liste de courses</h3>
+        <button id="closeShoppingListModalBtn" class="close-btn" type="button">✕</button>
+      </div>
+      <form id="shoppingListForm" class="edit-form">
+        <div class="field">
+          <label for="shoppingListTitle">Titre</label>
+          <input id="shoppingListTitle" type="text" placeholder="Ex : Courses semaine" required />
+        </div>
+        <button class="primary-btn" type="submit">Créer</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="checklistModal" class="modal hidden">
+    <div class="modal-backdrop" data-close-checklist-modal="true"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Nouvelle check-list</h3>
+        <button id="closeChecklistModalBtn" class="close-btn" type="button">✕</button>
+      </div>
+      <form id="checklistForm" class="edit-form">
+        <div class="field">
+          <label for="checklistTitle">Titre</label>
+          <input id="checklistTitle" type="text" placeholder="Ex : Tâches du week-end" required />
+        </div>
+        <button class="primary-btn" type="submit">Créer</button>
+      </form>
+    </div>
+  </div>
+
   <script src="config.js"></script>
   <script src="app.js"></script>
+  <script src="lists.js"></script>
 </body>
 </html>
