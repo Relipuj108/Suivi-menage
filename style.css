@@ -1266,3 +1266,39 @@ select:focus {
     grid-template-columns: 1fr;
   }
 }
+
+.preset-add-btn {
+  min-width: 72px;
+}
+
+@media (max-width: 760px) {
+  .preset-item {
+    grid-template-columns: minmax(0, 1fr) 78px 78px;
+    grid-template-areas:
+      "label qty unit"
+      "category category category"
+      "actions actions actions";
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .preset-item select[data-preset-edit-category] {
+    width: 100%;
+  }
+
+  .preset-item .item-side-actions {
+    justify-content: flex-start;
+    gap: 6px;
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  .preset-item .item-side-actions .small-pill-btn,
+  .preset-item .item-side-actions .primary-btn {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 11px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+}
