@@ -208,68 +208,74 @@
       </section>
     </div>
 
-    <div id="modeCourses" class="mode-section hidden-panel">
-      <section class="panel">
-        <div class="section-title-row">
-          <div>
-            <h2>Liste de courses</h2>
-            <p class="section-subtitle">3 listes actives maximum. Historique conservé.</p>
-          </div>
-          <button id="createShoppingListBtn" class="primary-btn" type="button">Nouvelle liste</button>
-        </div>
-
-        <div id="shoppingListsTabs" class="list-tabs"></div>
-      </section>
-
-      <section class="panel">
-        <div class="section-title-row">
-          <h2>Catégories prédéfinies</h2>
-        </div>
-        <div id="shoppingPresetCategories" class="preset-categories"></div>
-      </section>
-
-      <section class="panel">
-        <div class="section-title-row">
-          <h2>Ajouter un article</h2>
-        </div>
-
-        <form id="shoppingItemForm" class="shopping-inline-form">
-          <input id="shoppingItemLabel" type="text" placeholder="Article" required />
-          <input id="shoppingItemQuantityValue" type="number" step="0.01" placeholder="Qté" />
-          <select id="shoppingItemQuantityUnit">
-            <option value="piece">Nombre</option>
-            <option value="kg">kg</option>
-            <option value="g">g</option>
-            <option value="l">L</option>
-            <option value="ml">ml</option>
-          </select>
-          <button class="primary-btn" type="submit">Ajouter</button>
-        </form>
-      </section>
-
-      <section class="panel">
-        <div class="section-title-row">
-          <div>
-            <h2>Articles</h2>
-            <p class="section-subtitle">Maintenir appuyé pour déplacer un article.</p>
-          </div>
-          <select id="shoppingFilter">
-            <option value="all">Afficher tout</option>
-            <option value="unchecked">Seulement non cochés</option>
-            <option value="checked">Seulement cochés</option>
-          </select>
-        </div>
-
-        <div id="shoppingItemsContainer" class="sortable-list"></div>
-      </section>
-
-      <section class="panel">
-        <div class="section-title-row">
-          <h2>Historique des listes</h2>
-        </div>
-        <div id="shoppingArchivedLists" class="history-list"></div>
-      </section>
+<div id="modeCourses" class="mode-section hidden-panel">
+  <section class="panel">
+    <div class="section-title-row">
+      <div>
+        <h2>Liste de courses</h2>
+        <p class="section-subtitle">3 listes actives maximum. Historique conservé.</p>
+      </div>
+      <button id="createShoppingListBtn" class="primary-btn" type="button">Nouvelle liste</button>
     </div>
+
+    <div id="shoppingListsTabs" class="list-tabs"></div>
+  </section>
+
+  <section class="panel">
+    <div class="section-title-row">
+      <div>
+        <h2>Articles</h2>
+        <p class="section-subtitle">Maintenir appuyé pour déplacer un article.</p>
+      </div>
+      <select id="shoppingFilter">
+        <option value="all">Afficher tout</option>
+        <option value="unchecked">Seulement non cochés</option>
+        <option value="checked">Seulement cochés</option>
+      </select>
+    </div>
+
+    <div id="shoppingItemsContainer" class="sortable-list"></div>
+  </section>
+
+  <section class="panel">
+    <div class="section-title-row">
+      <h2>Ajouter un article</h2>
+    </div>
+
+    <form id="shoppingItemForm" class="shopping-inline-form">
+      <input id="shoppingItemLabel" type="text" placeholder="Article" required />
+      <input id="shoppingItemQuantityValue" type="number" step="0.01" placeholder="Qté" />
+      <select id="shoppingItemQuantityUnit">
+        <option value="piece">Nombre</option>
+        <option value="kg">kg</option>
+        <option value="g">g</option>
+        <option value="l">L</option>
+        <option value="ml">ml</option>
+      </select>
+      <button class="primary-btn" type="submit">Ajouter</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="section-title-row">
+      <h2>Catégories prédéfinies</h2>
+    </div>
+
+    <form id="shoppingPresetCategoryForm" class="shopping-inline-form shopping-category-form">
+      <input id="shoppingPresetCategoryName" type="text" placeholder="Nouvelle catégorie (ex : Boissons)" required />
+      <button class="primary-btn" type="submit">Ajouter la catégorie</button>
+    </form>
+
+    <div id="shoppingPresetCategories" class="preset-categories"></div>
+  </section>
+
+  <section class="panel">
+    <div class="section-title-row">
+      <h2>Historique des listes</h2>
+    </div>
+    <div id="shoppingArchivedLists" class="history-list"></div>
+  </section>
+</div>
 
     <div id="modeChecklists" class="mode-section hidden-panel">
       <section class="panel">
