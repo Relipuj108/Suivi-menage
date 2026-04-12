@@ -1273,32 +1273,57 @@ select:focus {
 
 @media (max-width: 760px) {
   .preset-item {
-    grid-template-columns: minmax(0, 1fr) 78px 78px;
+    grid-template-columns: minmax(0, 1fr) 68px 72px;
     grid-template-areas:
       "label qty unit"
-      "category category category"
-      "actions actions actions";
+      "category actions actions";
     gap: 6px;
     padding: 8px;
   }
 
+  .preset-item input,
+  .preset-item select {
+    min-height: 38px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .preset-item input[type="number"][data-preset-edit-value] {
+    text-align: center;
+  }
+
+  .preset-item select[data-preset-edit-unit] {
+    padding-left: 8px;
+    padding-right: 26px;
+  }
+
   .preset-item select[data-preset-edit-category] {
-    width: 100%;
+    width: auto;
+    min-width: 0;
+    max-width: 170px;
+    justify-self: start;
+    padding-right: 26px;
   }
 
   .preset-item .item-side-actions {
-    justify-content: flex-start;
-    gap: 6px;
+    justify-self: end;
+    justify-content: flex-end;
+    gap: 4px;
     flex-wrap: nowrap;
-    width: 100%;
+    width: auto;
+    min-width: 0;
   }
 
   .preset-item .item-side-actions .small-pill-btn,
   .preset-item .item-side-actions .primary-btn {
     min-height: 30px;
-    padding: 0 10px;
+    padding: 0 8px;
     font-size: 11px;
     white-space: nowrap;
-    flex: 0 0 auto;
+    min-width: 0;
+  }
+
+  .preset-add-btn {
+    min-width: 58px;
   }
 }
