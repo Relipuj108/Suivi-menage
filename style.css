@@ -1197,7 +1197,7 @@ select:focus {
 
 .shopping-preset-form {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.5fr) minmax(0, 1.2fr) 110px 110px minmax(160px, 180px);
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 10px;
   margin-bottom: 14px;
   align-items: stretch;
@@ -1205,16 +1205,11 @@ select:focus {
 
 .shopping-preset-form > * {
   min-width: 0;
+  width: 100%;
 }
 
 .shopping-preset-form .primary-btn {
   width: 100%;
-}
-
-@media (max-width: 1200px) {
-  .shopping-preset-form {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
 }
 
 @media (max-width: 900px) {
