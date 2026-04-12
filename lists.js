@@ -298,7 +298,7 @@ function renderPresetCategoryItems() {
               />
 
               <select data-preset-edit-unit="${item.id}">
-                <option value="piece" ${item.quantity_unit === "piece" ? "selected" : ""}>Nombre</option>
+                <option value="piece" ${item.quantity_unit === "piece" ? "selected" : ""}>pcs</option>
                 <option value="kg" ${item.quantity_unit === "kg" ? "selected" : ""}>kg</option>
                 <option value="g" ${item.quantity_unit === "g" ? "selected" : ""}>g</option>
                 <option value="l" ${item.quantity_unit === "l" ? "selected" : ""}>L</option>
