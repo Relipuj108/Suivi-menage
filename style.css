@@ -1195,16 +1195,35 @@ select:focus {
   }
 }
 
-.shopping-category-form {
-  grid-template-columns: minmax(0, 1fr) 180px;
-  margin-bottom: 12px;
+.shopping-preset-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 110px 110px 180px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
-@media (max-width: 760px) {
-  .shopping-category-form {
-    grid-template-columns: 1fr;
+.section-title-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.danger-soft-btn {
+  color: #b84f4f;
+  background: rgba(225, 99, 99, 0.12);
+  border: 1px solid rgba(225, 99, 99, 0.18);
+}
+
+@media (max-width: 900px) {
+  .shopping-preset-form {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
+@media (max-width: 640px) {
+  .shopping-preset-form {
+    grid-template-columns: 1fr;
+  }
+}
 
 
